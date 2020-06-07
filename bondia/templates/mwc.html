@@ -1,0 +1,128 @@
+{% extends base %}
+
+<!-- goes in head -->
+{% block postamble %}
+<script src="https://unpkg.com/@webcomponents/webcomponentsjs@next/webcomponents-loader.js"></script>
+<script type="module" src="https://unpkg.com/@material/mwc-layout-grid?module"></script>
+<script type="module" src="https://unpkg.com/@material/mwc-button?module"></script>
+<script type="module" src="https://unpkg.com/@material/mwc-drawer?module"></script>
+<script type="module" src="https://unpkg.com/@material/mwc-icon-button?module"></script>
+<script type="module" src="https://unpkg.com/@material/mwc-slider?module"></script>
+<script type="module" src="https://unpkg.com/@material/mwc-top-app-bar-fixed?module"></script>
+<link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
+
+<style>
+.grid {
+  width: 100%;
+  background: #EEEEEE;
+}
+
+.grid-cell {
+  height: 210px;
+  border-radius: 4px;
+  <-- box-shadow:0 10px 16px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19); -->
+  padding: 5px;
+}
+</style>
+
+<style>
+body {
+    font-family: roboto;
+    margin: 0px;
+}
+mwc-top-app-bar-fixed {
+    box-shadow: 5px 5px 20px #9E9E9E;
+    font-size: 20px;
+}
+
+mwc-drawer {
+    min-height:200px;
+    height:100%;
+}
+.appMenu * {
+    width:100%;
+    align-items: left;
+}
+.appMain {
+    margin: 10px;
+}
+
+mwc-layout-grid {
+  --mwc-layout-grid-background: #DDDDDD;
+  --mwc-layout-grid-max-width: 800px;
+  --mdc-layout-grid-columns: 2;
+  width: 100%;
+}
+.demo-cell {
+  height: 100px;
+  background: #FFFFFF;
+  text-align: center;
+}
+.demo-grid--cell-alignment {
+  --mwc-layout-grid-min-height: 200px;
+}
+</style>
+
+{% endblock %}
+
+<!-- goes in body -->
+{% block contents %}
+<mwc-drawer hasHeader type="dismissible">
+    <span slot="title">{{ app_title }}</span>
+    <div class="appMenu">
+        <mwc-button outlined="" label="Unvalidated Days (18)"></mwc-button>
+        <hr>
+        <div align="center"><p><h4>Select Day</h4></p>
+        {{ embed(roots.day_selector) }}</div>
+        <hr>
+        <div align="center"><p><h4>Select Plots</h4></p></div>
+        <div>{{ embed(roots.toggle_delay_spectrum) }}</div>
+        <hr>
+        <div align="center"><p><h4>Decision</h4></p></div>
+        <mwc-button raised="" label="Mark day as good" align="left"></mwc-button><br><br>
+        <mwc-button raised="" label="Mark day as bad" align="left"></mwc-button><br><br>
+        <mwc-button raised="" label="I don't know" align="left"></mwc-button>
+    </div>
+    <div class="appContent" slot="appContent">
+        <mwc-top-app-bar-fixed class="appBar">
+            <mwc-icon-button icon="menu" slot="navigationIcon" class="appDrawerToggleButton"></mwc-icon-button>
+            <div slot="title" style="font-size:20px;">{{ subtitle }}</div>
+            <mwc-icon-button icon="perm_identity" slot="actionItems" label="Login"></mwc-icon-button>
+        </mwc-top-app-bar-fixed>
+        <div class="appMain">
+            <p><h1>{{ main_header }}</h1></p>
+            <p>{{ main_description }}</p><br>
+            <div>{{ embed(roots.plot_delay_spectrum) }}</div>
+        </div>
+    </div>
+</mwc-drawer>
+
+<script>
+    var drawers = document.getElementsByTagName("mwc-drawer");
+
+    <!-- Enables toggling of drawer -->
+    for (let drawer of drawers){
+      var button = drawer.getElementsByClassName('appDrawerToggleButton')[0];
+      button.onclick = function(e) {
+        var button = e.target;
+        var drawer = button;
+        while (drawer.tagName!=="MWC-DRAWER") {
+          drawer=drawer.parentElement;
+        }
+        drawer.open = !drawer.open;
+        const open = drawer.open;
+
+        var drawers = document.getElementsByTagName("mwc-drawer");
+        for (let drawer of drawers){drawer.open=open}
+      };
+
+      <!-- Enables displaying the bar in a notebook cell instead of full window -->
+      var bar = drawer.getElementsByClassName('appBar')[0];
+      bar.scrollTarget = drawer.getElementsByClassName('appContent')[0];
+
+      drawer.shadow
+      drawer.open = true
+    }
+</script>
+{% endblock %}

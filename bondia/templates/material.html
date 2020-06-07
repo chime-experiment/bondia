@@ -1,0 +1,76 @@
+{% extends base %}
+
+<!-- goes in body -->
+{% block postamble %}
+<link href="https://unpkg.com/material-components-web@v4.0.0/dist/material-components-web.min.css" rel="stylesheet">
+<script src="https://unpkg.com/material-components-web@v4.0.0/dist/material-components-web.min.js"></script>
+<link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
+{% endblock %}
+
+<!-- goes in body -->
+{% block contents %}
+<header class="mdc-top-app-bar app-bar" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }}{% endif %}" id="header">
+  <div class="mdc-top-app-bar__row">
+    <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
+      <button class="material-icons mdc-top-app-bar__navigation-icon mdc-icon-button">menu</button>
+      <span class="mdc-top-app-bar__title">{{ subtitle }}</span>
+      <button class="mdc-icon-button material-icons">account_circle</button>
+    </section>
+  </div>
+</header>
+
+<aside class="mdc-drawer mdc-top-app-bar--fixed-adjust mdc-drawer--dismissible mdc-drawer--open" id="sidebar">
+  <span slot="title">{{ app_title }}</span>
+  <div class="mdc-drawer__content">
+    <div class="mdc-list">
+        <button class="mdc-button--outlined">
+          <div class="mdc-button__ripple"></div>
+          <span class="mdc-button__label">Unvalidated Day (19)</span>
+        </button>
+        <hr>
+        <div align="center"><p><h4>Select Day</h4></p>
+        {{ embed(roots.day_selector) | indent(8) }}</div>
+        <hr>
+        <div>{{ embed(roots.plot_selector) | indent(8) }}</div>
+        <hr>
+        <div align="center"><p><h4>Decision</h4></p></div>
+        <div>
+            <button class="mdc-button--raised">
+              <span class="mdc-button__label">Mark day as bad</span>
+            </button>
+            <button class="mdc-button--raised">
+              <span class="mdc-button__label">Mark day as good</span>
+            </button>
+            <button class="mdc-button--raised">
+              <span class="mdc-button__label">I don't know</span>
+            </button>
+        </div>
+    </div>
+  </div>
+</aside>
+
+<div class="mdc-drawer-app-content mdc-top-app-bar--fixed-adjust">
+<main class="main-content" id="main">
+    <div>{{ embed(roots.A) }}</div>
+    <h2>Ring Map</h2>
+    <h2>Gains</h2>
+    <h2>Sensitivity</h2>
+</main>
+</div>
+
+<script>
+  var drawer = mdc.drawer.MDCDrawer.attachTo(document.querySelector('.mdc-drawer'));
+  drawer.open = true;
+  console.log(drawer)
+  var topAppBar = mdc.topAppBar.MDCTopAppBar.attachTo(document.getElementById('header'));
+  topAppBar.setScrollTarget(document.getElementById('main'));
+  topAppBar.listen('MDCTopAppBar:nav', function() {
+    drawer.open = !drawer.open;
+    // Ensure bokeh layout recomputes layout
+    window.dispatchEvent(new Event('resize'));
+  });
+</script>
+
+
+{% endblock %}

@@ -1,0 +1,24 @@
+#!/usr/bin/env python3.8
+
+import click
+import pathlib
+import yaml
+
+from bondia.gui import BondiaGui
+
+
+@click.command()
+@click.option("-c", '--configfile', help='Path to the bondia config file.',
+              default="/etc/bondia/bondia.conf")
+def start(configfile):
+    print(f"starting with {configfile}")
+    with pathlib.Path(configfile).open() as file:
+        config = yaml.safe_load(file)
+    print(f"Loaded config: {config}")
+    gui = BondiaGui.from_config(config)
+    print(gui.config_delayspectrum)
+    gui.populate_template()
+    gui.start_server()
+
+
+start()

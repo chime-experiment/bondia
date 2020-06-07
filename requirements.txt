@@ -1,0 +1,9 @@
+bokeh
+caput @ git+https://github.com/radiocosmology/caput.git
+ch_util @ git+https://git@github.com/chime-experiment/ch_util.git
+click
+jinja2
+holoviews
+matplotlib
+panel
+param
