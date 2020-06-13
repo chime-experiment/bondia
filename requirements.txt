@@ -1,6 +1,6 @@
 bokeh
 caput @ git+https://github.com/radiocosmology/caput.git
-ch_util @ git+https://git@github.com/chime-experiment/ch_util.git
+ch_util @ git+ssh://git@github.com/chime-experiment/ch_util.git@master
 click
 jinja2
 holoviews
