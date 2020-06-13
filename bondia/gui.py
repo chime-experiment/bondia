@@ -33,16 +33,24 @@ class BondiaGui(Reader):
         self.toggle_plot = {}
 
     def populate_template(self):
-        print(self.config_delayspectrum)
         if self.config_delayspectrum:
             delay = DelaySpectrumPlot.from_config(self.config_delayspectrum)
             self.plot[delay.id] = delay
 
+        # TODO: keep available days outside plot
         day_selector = pn.widgets.Select(
-            name="Select LSD", options=delay.index, width=self.width_drawer_widgets
+            name="Select LSD",
+            options=list(delay.index.keys()),
+            width=self.width_drawer_widgets,
         )
 
-        # Fille the template with components
+        # Set initial value
+        delay.lsd = day_selector.value
+
+        # Link selected day to plots
+        day_selector.link(delay, value="lsd")
+
+        # Fill the template with components
         components = [("day_selector", day_selector)]
 
         # Fill in the plot selection toggle buttons

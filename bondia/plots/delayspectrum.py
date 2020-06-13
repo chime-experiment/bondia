@@ -86,7 +86,9 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot, Reader):
     log = param.Boolean(default=True)
     use_datashader = param.Boolean(default=False)
     clim = param.Range(default=(0.1, 10000))
-    lsd = param.Selector()
+
+    # Hide lsd selector by setting precedence<0
+    lsd = param.Selector(precedence=-1)
 
     @param.depends("lsd", "transpose", "log", "use_datashader", "clim")
     def view(self):
