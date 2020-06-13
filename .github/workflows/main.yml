@@ -37,13 +37,94 @@ jobs:
       with:
         python-version: 3.8
 
-    - name: Install pip dependencies
+    - name: Install apt dependencies
+      run: |
+        sudo apt-get install -y libhdf5-serial-dev
+
+    # Todo: This is a public repo, but chimedb_config uses ssh for this dependency.
+    - name: Clone chimedb
+      uses: actions/checkout@v2
+      with:
+        repository: chime-experiment/chimedb
+        token: ${{ secrets.ACCESS_TOKEN }}
+        path: "chimedb"
+
+    # Todo: This is a public repo, but ch_util uses ssh for this dependency.
+    - name: Clone chimedb_di
+      uses: actions/checkout@v2
+      with:
+        repository: chime-experiment/chimedb_di
+        token: ${{ secrets.ACCESS_TOKEN }}
+        path: "chimedb_di"
+
+    # Todo: This is a public repo, but ch_util uses ssh for this dependency.
+    - name: Clone chimedb_dataflag
+      uses: actions/checkout@v2
+      with:
+        repository: chime-experiment/chimedb_dataflag
+        token: ${{ secrets.ACCESS_TOKEN }}
+        path: "chimedb_dataflag"
+
+    - name: Clone chimedb_config from private repo
+      uses: actions/checkout@v2
+      with:
+        repository: chime-experiment/chimedb_config
+        token: ${{ secrets.ACCESS_TOKEN }}
+        path: "chimedb_config"
+
+    - name: Clone ch_util from private repo
+      uses: actions/checkout@v2
+      with:
+        repository: chime-experiment/ch_util
+        token: ${{ secrets.ACCESS_TOKEN }}
+        path: "ch_util"
+
+    - name: Install chimedb
+      run: |
+        cd chimedb
+        pip install .
+        cd ..
+
+    - name: Install chimedb_di
+      run: |
+        cd chimedb_di
+        pip install .
+        cd ..
+
+    - name: Install chimedb_dataflag
+      run: |
+        cd chimedb_dataflag
+        pip install .
+        cd ..
+
+    - name: Install chimedb_config
+      run: |
+        cd chimedb_config
+        pip install .
+        cd ..
+
+    - name: Install ch_util
+      run: |
+        cd ch_util
+        pip install .
+        cd ..
+
+    - name: Remove cloned repositories
+      run: |
+        rm -rf chimedb
+        rm -rf chimedb_di
+        rm -rf chimedb_dataflag
+        rm -rf chimedb_config
+        rm -rf ch_util
+
+    - name: Install bondia dependencies
       run: |
         pip install -r requirements.txt
+        pip install pytest
 
     - name: Install bondia
       run: |
         pip install .
 
-    - name: Run serial tests
+    - name: Run tests
       run: pytest .
