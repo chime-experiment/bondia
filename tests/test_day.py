@@ -1,6 +1,6 @@
 import datetime
 
-from bondia.utils.day import Day
+from bondia.util.day import Day
 
 
 def test_from_lsd():

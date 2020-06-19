@@ -1,47 +1,23 @@
-from bokeh.themes.theme import Theme
-from caput.config import Property, Reader
-import datetime
-import holoviews as hv
-from jinja2 import Environment, FileSystemLoader
 import panel as pn
-import pathlib
 
-from .plots.delayspectrum import DelaySpectrumPlot
+from .plot.delayspectrum import DelaySpectrumPlot
 
 
-class BondiaGui(Reader):
-    config_delayspectrum = Property(None, dict, "delay_spectrum")
-    template_name = Property("mwc", str, "html_template")
-    width_drawer_widgets = Property(220, int)
+class BondiaGui:
+    def __init__(self, template, width_drawer_widgets, data_loader):
+        self._width_drawer_widgets = width_drawer_widgets
+        self._template = template
+        self._plot = {}
+        self._toggle_plot = {}
+        self._data = data_loader
 
-    def __init__(self):
-        hv.extension("bokeh")
-        hv.renderer("bokeh").theme = Theme(json={})  # Reset Theme
-        pn.extension()
-
-        env = Environment(
-            loader=FileSystemLoader(pathlib.Path(__file__).parent / "templates")
-        )
-        jinja_template = env.get_template(f"{self.template_name}.html")
-
-        self.template = pn.Template(jinja_template)
-
-        self.template.add_variable("subtitle", "CHIME Daily Validation")
-        self.template.add_variable("app_title", "bon dia")
-
-        self.plot = {}
-        self.toggle_plot = {}
-
-    def populate_template(self):
-        if self.config_delayspectrum:
-            delay = DelaySpectrumPlot.from_config(self.config_delayspectrum)
-            self.plot[delay.id] = delay
+    def populate_template(self, template):
+        delay = DelaySpectrumPlot(self._data)
+        self._plot[delay.id] = delay
 
         # TODO: keep available days outside plot
         day_selector = pn.widgets.Select(
-            name="Select LSD",
-            options=list(delay.index.keys()),
-            width=self.width_drawer_widgets,
+            options=list(self._data.index.keys()), width=self._width_drawer_widgets,
         )
 
         # Set initial value
@@ -54,34 +30,39 @@ class BondiaGui(Reader):
         components = [("day_selector", day_selector)]
 
         # Fill in the plot selection toggle buttons
-        for p in self.plot.values():
-            self.toggle_plot[p.id] = pn.widgets.Toggle(
+        for p in self._plot.values():
+            self._toggle_plot[p.id] = pn.widgets.Toggle(
                 name=f"Deactivate {p.name}",
                 button_type="success",
                 value=True,
-                width=self.width_drawer_widgets,
+                width=self._width_drawer_widgets,
             )
-            self.toggle_plot[p.id].param.watch(self.update_widget, "value")
-            self.toggle_plot[p.id].param.trigger("value")
+            self._toggle_plot[p.id].param.watch(self.update_widget, "value")
+            self._toggle_plot[p.id].param.trigger("value")
 
-            components.append((f"toggle_{p.id}", self.toggle_plot[p.id]))
+            components.append((f"toggle_{p.id}", self._toggle_plot[p.id]))
             components.append((f"plot_{p.id}", p.panel_row))
 
         for l, c in components:
-            self.template.add_panel(l, c)
+            template.add_panel(l, c)
+        return template
 
-    def start_server(self):
-        self.template.show(port=8008)
+    def render(self):
+        template = pn.Template(self._template)
+
+        template.add_variable("subtitle", "CHIME Daily Validation")
+        template.add_variable("app_title", "bon dia")
+
+        return self.populate_template(template)
 
     def update_widget(self, event):
-        print(event)
         id = "delay_spectrum"
-        toggle = self.toggle_plot[id]
+        toggle = self._toggle_plot[id]
         if event.new:
-            self.plot[id].panel_row = True
+            self._plot[id].panel_row = True
             toggle.button_type = "success"
             toggle.name = "Deactivate Delay Spectrum"
         else:
-            self.plot[id].panel_row = False
+            self._plot[id].panel_row = False
             toggle.button_type = "danger"
             toggle.name = "Activate Delay Spectrum"

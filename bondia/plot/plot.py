@@ -2,9 +2,9 @@ from panel import Row
 
 
 class BondiaPlot:
-    def __init__(self, title: str, activated: bool = True):
-        self._name = title
-        self._id = title.lower().replace(" ", "_")
+    def __init__(self, name: str, activated: bool = True):
+        self._name = name
+        self._id = name.lower().replace(" ", "_")
         self._panel_row_active = activated
         self._panel_row = None
 
@@ -15,6 +15,10 @@ class BondiaPlot:
     @property
     def name(self):
         return self._name
+
+    @property
+    def title(self):
+        return f"## {self._name}"
 
     @property
     def panel_row(self):
