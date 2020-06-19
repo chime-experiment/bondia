@@ -1,7 +1,8 @@
 bokeh
 caput @ git+https://github.com/radiocosmology/caput.git
-ch_util @ git+ssh://git@github.com/chime-experiment/ch_util.git@master
+ch_util @ git+https://github.com/chime-experiment/ch_util.git
 click
+draco @ git+https://github.com/radiocosmology/draco.git
 jinja2
 holoviews
 matplotlib

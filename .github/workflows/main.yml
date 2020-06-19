@@ -39,7 +39,7 @@ jobs:
 
     - name: Install apt dependencies
       run: |
-        sudo apt-get install -y libhdf5-serial-dev
+        sudo apt-get install -y libhdf5-serial-dev libopenmpi-dev
 
     # Todo: This is a public repo, but chimedb_config uses ssh for this dependency.
     - name: Clone chimedb
