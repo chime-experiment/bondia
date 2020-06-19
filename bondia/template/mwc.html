@@ -71,7 +71,7 @@ mwc-layout-grid {
 <mwc-drawer hasHeader type="dismissible">
     <span slot="title">{{ app_title }}</span>
     <div class="appMenu">
-        <mwc-button outlined="" label="Unvalidated Days (18)"></mwc-button>
+        <mwc-button disabled outlined="" label="Unvalidated Days (18)"></mwc-button>
         <hr>
         <div align="center"><p><h4>Select Day</h4></p>
         {{ embed(roots.day_selector) }}</div>
@@ -80,9 +80,9 @@ mwc-layout-grid {
         <div>{{ embed(roots.toggle_delay_spectrum) }}</div>
         <hr>
         <div align="center"><p><h4>Decision</h4></p></div>
-        <mwc-button raised="" label="Mark day as good" align="left"></mwc-button><br><br>
-        <mwc-button raised="" label="Mark day as bad" align="left"></mwc-button><br><br>
-        <mwc-button raised="" label="I don't know" align="left"></mwc-button>
+        <mwc-button disabled raised="" label="Mark day as good" align="left"></mwc-button><br><br>
+        <mwc-button disabled raised="" label="Mark day as bad" align="left"></mwc-button><br><br>
+        <mwc-button disabled raised="" label="I don't know" align="left"></mwc-button>
     </div>
     <div class="appContent" slot="appContent">
         <mwc-top-app-bar-fixed class="appBar">
