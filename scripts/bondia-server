@@ -14,12 +14,25 @@ from bondia import __version__
 
 logger = logging.getLogger("bondia-server")
 
+
 @click.command()
-@click.option("-c", '--configfile', help='Path to the bondia config file.',
-              default="/etc/bondia/bondia.conf", show_default=True)
-@click.option("--show/--no-show", help="Open browser and connect to webserver.", default=False, show_default=True)
+@click.option(
+    "-c",
+    "--configfile",
+    help="Path to the bondia config file.",
+    default="/etc/bondia/bondia.conf",
+    show_default=True,
+)
+@click.option(
+    "--show/--no-show",
+    help="Open browser and connect to webserver.",
+    default=False,
+    show_default=True,
+)
 @click.option("-p", "--port", help="Port.", default=8008, show_default=True)
-@click.option("-n", "--num_procs", help="Number of processes.", default=1, show_default=True)
+@click.option(
+    "-n", "--num_procs", help="Number of processes.", default=1, show_default=True
+)
 def start(configfile, show, port, num_procs):
 
     # TODO: use caput.config
@@ -37,7 +50,14 @@ def start(configfile, show, port, num_procs):
     # Create an instance of the GUI for each user session.
     def instance():
         return server.gui_instance()
-    panel.serve(instance, port=port, show=show, title="bondia | CHIME Daily Validation", num_procs=num_procs)
+
+    panel.serve(
+        instance,
+        port=port,
+        show=show,
+        title="bondia | CHIME Daily Validation",
+        num_procs=num_procs,
+    )
 
 
 if __name__ == "__main__":
