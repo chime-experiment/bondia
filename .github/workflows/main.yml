@@ -24,7 +24,9 @@ jobs:
       run: pip install black
 
     - name: Check code with black
-      run: black --check .
+      run: |
+        black --check .
+        black --check scripts/bondia-server
 
   run-tests:
 
