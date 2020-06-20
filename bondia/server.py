@@ -1,10 +1,10 @@
 from bokeh.themes.theme import Theme
 from caput.config import Property, Reader
 import holoviews as hv
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, PackageLoader
+from jinja2.exceptions import TemplateNotFound
 import logging
 import panel as pn
-import pathlib
 
 from .data import DataLoader
 from .util.exception import ConfigError
@@ -21,13 +21,20 @@ class BondiaServer(Reader):
 
     def __init__(self):
         hv.extension("bokeh")
-        hv.renderer("bokeh").theme = Theme(json={})  # Reset Theme
+        # hv.renderer("bokeh").theme = Theme(json={})  # Reset Theme
         pn.extension()
 
-        env = Environment(
-            loader=FileSystemLoader(pathlib.Path(__file__).parent / "template")
-        )
-        self._template = env.get_template(f"{self._template_name}.html")
+        try:
+            env = Environment(loader=PackageLoader("bondia"))
+        except ModuleNotFoundError:
+            raise EnvironmentError(
+                "Unable to find 'bondia' package ressources: templates."
+            )
+
+        try:
+            self._template = env.get_template(f"{self._template_name}.html")
+        except TemplateNotFound:
+            raise ConfigError(f"Can't find template '{self._template_name}'.")
 
     def _finalise_config(self):
         self.data = DataLoader.from_config(self._config_data_paths)
