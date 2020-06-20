@@ -2,6 +2,7 @@ bokeh
 caput @ git+https://github.com/radiocosmology/caput.git
 ch_util @ git+https://github.com/chime-experiment/ch_util.git
 click
+datashader
 draco @ git+https://github.com/radiocosmology/draco.git
 jinja2
 holoviews
