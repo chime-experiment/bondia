@@ -33,7 +33,10 @@ logger = logging.getLogger("bondia-server")
 @click.option(
     "-n", "--num_procs", help="Number of processes.", default=1, show_default=True
 )
-def start(configfile, show, port, num_procs):
+@click.option(
+    "--websocket_origin", help="Public hostnames which may connect to the websocket."
+)
+def start(configfile, show, port, num_procs, websocket_origin):
 
     # TODO: use caput.config
     logging.basicConfig(level=logging.DEBUG)
@@ -43,6 +46,9 @@ def start(configfile, show, port, num_procs):
     with pathlib.Path(configfile).open() as file:
         config = yaml.safe_load(file)
     logger.debug(f"Loaded config: {config}")
+
+    if isinstance(websocket_origin, str):
+        websocket_origin = [websocket_origin]
 
     # Prepare as much as possible in centralized server object
     server = BondiaServer.from_config(config)
@@ -57,6 +63,7 @@ def start(configfile, show, port, num_procs):
         show=show,
         title="bondia | CHIME Daily Validation",
         num_procs=num_procs,
+        websocket_origin=websocket_origin,
     )
 
 
