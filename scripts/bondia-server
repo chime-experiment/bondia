@@ -54,8 +54,11 @@ def start(configfile, show, port, num_procs, websocket_origin):
     server = BondiaServer.from_config(config)
 
     # Create an instance of the GUI for each user session.
+    def instance():
+        return server.gui_instance()
+
     panel.serve(
-        server.gui_instance,
+        instance,
         port=port,
         show=show,
         title="bondia | CHIME Daily Validation",
