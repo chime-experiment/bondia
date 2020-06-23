@@ -44,9 +44,6 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
     # Hide lsd selector by setting precedence < 0
     lsd = param.Selector(precedence=-1)
 
-    def panel(self):
-        return panel.Column(self.title, self.view)
-
     def __init__(self, data, **params):
         self.data = data
         self.selections = None
@@ -77,8 +74,8 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
 
         nplot = ux.size
 
-        # Fill a row with plots (one per pair of cylinders)
-        all_img = panel.Row()
+        # Fill a column with plots (one per pair of cylinders)
+        all_img = panel.Column(width_policy="max")
         mplot = {}
         ylim = None
         for pp, pux in reversed(list(enumerate(ux))):
@@ -142,7 +139,6 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
                         hv.opts.VLine(color="white", line_width=3, line_dash="dotted"),
                         hv.opts.HLine(color="white", line_width=3, line_dash="dotted"),
                     )
-                all_img.insert(0, img)
             else:
                 # set colormap
                 cmap_inferno = matplotlib_cm.__dict__["inferno"]
@@ -170,7 +166,7 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
                         hv.opts.VLine(color="white", line_width=3, line_dash="dotted"),
                         hv.opts.HLine(color="white", line_width=3, line_dash="dotted"),
                     )
-
-                all_img.insert(0, img)
+            img.opts(responsive="width", height=500)
+            all_img.insert(0, img)
 
         return all_img
