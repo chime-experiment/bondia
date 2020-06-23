@@ -1,4 +1,3 @@
-from bokeh.themes.theme import Theme
 from caput.config import Property, Reader
 import holoviews as hv
 from jinja2 import Environment, PackageLoader
