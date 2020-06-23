@@ -33,21 +33,6 @@ mwc-drawer {
 .appMain {
     margin: 10px;
 }
-
-mwc-layout-grid {
-  --mwc-layout-grid-background: #DDDDDD;
-  --mwc-layout-grid-max-width: 800px;
-  --mdc-layout-grid-columns: 2;
-  width: 100%;
-}
-.demo-cell {
-  height: 100px;
-  background: #FFFFFF;
-  text-align: center;
-}
-.demo-grid--cell-alignment {
-  --mwc-layout-grid-min-height: 200px;
-}
 </style>
 
 {% endblock %}
@@ -77,9 +62,7 @@ mwc-layout-grid {
             <mwc-icon-button icon="perm_identity" slot="actionItems" label="Login"></mwc-icon-button>
         </mwc-top-app-bar-fixed>
         <div class="appMain">
-            <p><h1>{{ main_header }}</h1></p>
-            <p>{{ main_description }}</p><br>
-            <div>{{ embed(roots.plot_delay_spectrum) }}</div>
+            {{ embed(roots.plot_delay_spectrum) }}
         </div>
     </div>
 </mwc-drawer>
@@ -102,10 +85,6 @@ mwc-layout-grid {
         var drawers = document.getElementsByTagName("mwc-drawer");
         for (let drawer of drawers){drawer.open=open}
       };
-
-      <!-- Enables displaying the bar in a notebook cell instead of full window -->
-      var bar = drawer.getElementsByClassName('appBar')[0];
-      bar.scrollTarget = drawer.getElementsByClassName('appContent')[0];
 
       drawer.shadow
       drawer.open = true
