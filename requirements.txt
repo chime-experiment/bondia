@@ -7,5 +7,5 @@ draco @ git+https://github.com/radiocosmology/draco.git
 jinja2
 holoviews
 matplotlib
-panel
+panel==0.9.7
 param
