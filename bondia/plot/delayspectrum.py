@@ -166,7 +166,15 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
                         hv.opts.VLine(color="white", line_width=3, line_dash="dotted"),
                         hv.opts.HLine(color="white", line_width=3, line_dash="dotted"),
                     )
-            img.opts(responsive="width", height=500)
+            img.opts(
+                # Fix height, but make width responsive
+                height=500,
+                responsive=True,
+                # TODO: initial width is 0 and this is only resized when a param changed.
+                # Set min width as workaround:
+                min_width=1000,
+            )
+
             all_img.insert(0, img)
 
         return all_img
