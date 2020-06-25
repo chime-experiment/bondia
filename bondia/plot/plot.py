@@ -44,7 +44,7 @@ class BondiaPlot:
             if value:
                 self._panel_col[0] = self.title
                 self._panel_col[1][0] = self.view
-                self._panel_col[1][1] = self.param
+                self._panel_col[1][1] = Param(self, expand_button=False)
             else:
                 self._panel_col[0] = None
                 self._panel_col[1][0] = None

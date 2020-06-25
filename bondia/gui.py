@@ -51,7 +51,7 @@ class BondiaGui:
         template = pn.Template(self._template)
 
         template.add_variable("subtitle", "CHIME Daily Validation")
-        template.add_variable("app_title", "bon dia")
+        template.add_variable("app_title", "BON DIA")
 
         return self.populate_template(template)
 
