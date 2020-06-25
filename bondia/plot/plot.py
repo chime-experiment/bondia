@@ -1,4 +1,4 @@
-from panel import Column, Row
+from panel import Column, Row, Param
 
 
 class BondiaPlot:
@@ -26,7 +26,12 @@ class BondiaPlot:
             if self._panel_col_active:
 
                 self._panel_col = Column(
-                    self.title, Row(self.view, self.param), width_policy="max"
+                    self.title,
+                    # Stop param from showing the expand button of the datashading function
+                    # selector. It would be nice to show it, but there are options that can make
+                    # the whole server crash.
+                    Row(self.view, Param(self, expand_button=False)),
+                    width_policy="max",
                 )
             else:
                 self._panel_col = Column(None, Row())

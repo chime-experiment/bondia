@@ -3,7 +3,7 @@ from matplotlib import cm as matplotlib_cm
 import panel
 import param
 import holoviews as hv
-from holoviews.operation.datashader import datashade
+from holoviews.operation.datashader import datashade, rasterize
 from holoviews.plotting.util import process_cmap
 import numpy as np
 
@@ -38,8 +38,10 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
     helper_lines = param.Boolean(default=True)
 
     # Default: turn on datashader and disable colormap range
-    serverside_rendering = param.Boolean(default=True)
-    colormap_range = param.Range(default=(0.1, 10000), constant=True)
+    serverside_rendering = param.Selector(
+        objects=[None, rasterize, datashade], default=rasterize
+    )
+    colormap_range = param.Range(default=(0.1, 10000), constant=False)
 
     # Hide lsd selector by setting precedence < 0
     lsd = param.Selector(precedence=-1)
@@ -53,7 +55,7 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
     @param.depends("serverside_rendering", watch=True)
     def update_serverside_rendering(self):
         # Disable colormap range selection if using datashader (because it uses auto values)
-        self.param["colormap_range"].constant = self.serverside_rendering
+        self.param["colormap_range"].constant = self.serverside_rendering == datashade
 
     @param.depends(
         "lsd",
@@ -131,7 +133,7 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
                 ylim=ylim,
             )
 
-            if not self.serverside_rendering:
+            if self.serverside_rendering is None:
                 if self.helper_lines:
                     img = (img * hv.VLine(0) * hv.HLine(0)).opts(
                         hv.opts.VLine(color="white", line_width=3, line_dash="dotted"),
@@ -149,8 +151,8 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
                 else:
                     normalization = "linear"
 
-                # datashade
-                img = datashade(
+                # datashade/rasterize the image
+                img = self.serverside_rendering(
                     img,
                     cmap=cmap_inferno,
                     precompute=True,
