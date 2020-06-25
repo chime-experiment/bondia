@@ -72,8 +72,6 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
 
         ux, uix = np.unique(np.round(x).astype(np.int), return_inverse=True)
 
-        nplot = ux.size
-
         # Fill a column with plots (one per pair of cylinders)
         all_img = panel.Column(width_policy="max")
         mplot = {}
@@ -127,7 +125,7 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
                 clim=self.colormap_range,
                 logz=self.logarithmic_colorscale,
                 cmap=process_cmap("inferno", provider="matplotlib"),
-                colorbar=(pp == nplot - 1),
+                colorbar=True,
                 title=f"x = {pux} m",
                 xlim=xlim,
                 ylim=ylim,
