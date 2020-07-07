@@ -45,7 +45,8 @@ mwc-drawer {
         {{ app_title }}
     </span>
     <div class="appMenu">
-        <mwc-button disabled outlined="" label="Unvalidated Days (18)"></mwc-button>
+        <div align="center"><p>User: <i>{{ username }}</i></p></div>
+        <mwc-button disabled outlined="" label="Unvalidated Days ({{ num_unvalidated }})"></mwc-button>
         <hr>
         <p><h4>Select Data</h4></p>
         {{ embed(roots.rev_selector) }}
