@@ -52,6 +52,8 @@ class BondiaGui:
 
         template.add_variable("subtitle", "CHIME Daily Validation")
         template.add_variable("app_title", "BON DIA")
+        template.add_variable("username", pn.state.cache.get("username", "-"))
+        template.add_variable("num_unvalidated", 19)
 
         return self.populate_template(template)
 

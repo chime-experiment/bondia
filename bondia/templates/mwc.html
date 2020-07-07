@@ -40,7 +40,8 @@ mwc-drawer {
 <mwc-drawer hasHeader  type="modal">
     <span slot="title">{{ app_title }}</span>
     <div class="appMenu">
-        <mwc-button disabled outlined="" label="Unvalidated Days (18)"></mwc-button>
+        <div align="center"><p>User: <i>{{ username }}</i></p></div>
+        <mwc-button disabled outlined="" label="Unvalidated Days ({{ num_unvalidated }})"></mwc-button>
         <hr>
         <div align="center"><p><h4>Select Day</h4></p>
         {{ embed(roots.day_selector) }}</div>

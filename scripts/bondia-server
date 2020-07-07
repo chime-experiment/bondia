@@ -1,13 +1,15 @@
 #!/usr/bin/env python3.8
 
+from bokeh.server.auth_provider import AuthModule
 import click
 import logging
 import panel
 import pathlib
+import secrets
 import yaml
 
 from bondia.server import BondiaServer
-from bondia import __version__
+from bondia import auth, __version__
 
 # This script is both to quickly start a webserver for a single session (use --show) and as a
 # target for deployment via `panel serve` (make sure the config is at `/etc/bondia/bondia.conf`.
@@ -36,7 +38,13 @@ logger = logging.getLogger("bondia-server")
 @click.option(
     "--websocket_origin", help="Public hostnames which may connect to the websocket."
 )
-def start(configfile, show, port, num_procs, websocket_origin):
+@click.option(
+    "--login/--no-login",
+    help="Require user authentication.",
+    default=True,
+    show_default=True,
+)
+def start(configfile, show, port, num_procs, websocket_origin, login):
 
     # TODO: use caput.config
     logging.basicConfig(level=logging.DEBUG)
@@ -53,6 +61,13 @@ def start(configfile, show, port, num_procs, websocket_origin):
     # Prepare as much as possible in centralized server object
     server = BondiaServer.from_config(config)
 
+    # Enable authentication
+    kwargs = {}
+    if login:
+        kwargs["auth_provider"] = AuthModule(auth.__file__)
+        kwargs["xsrf_cookies"] = True
+        kwargs["cookie_secret"] = secrets.token_hex()
+
     # Create an instance of the GUI for each user session.
     def instance():
         return server.gui_instance()
@@ -64,6 +79,7 @@ def start(configfile, show, port, num_procs, websocket_origin):
         title="bondia | CHIME Daily Validation",
         num_procs=num_procs,
         websocket_origin=websocket_origin,
+        **kwargs,
     )
 
 
