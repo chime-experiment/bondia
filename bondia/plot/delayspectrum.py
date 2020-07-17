@@ -43,8 +43,9 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
     )
     colormap_range = param.Range(default=(0.1, 10000), constant=False)
 
-    # Hide lsd selector by setting precedence < 0
+    # Hide lsd, revision selectors by setting precedence < 0
     lsd = param.Selector(precedence=-1)
+    revision = param.Selector(precedence=-1)
 
     def __init__(self, data, **params):
         self.data = data
@@ -66,7 +67,7 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
         "helper_lines",
     )
     def view(self):
-        spectrum = self.data.load_file(self.lsd)
+        spectrum = self.data.load_file(self.revision, self.lsd)
         x, y = spectrum.index_map["baseline"].T
 
         # Index map for delay (x-axis)
