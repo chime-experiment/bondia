@@ -95,6 +95,11 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
                 np.any(spectrum.spectrum[this_cyl_sep, :] > 0.0, axis=-1)
             ]
 
+            # TODO: what do we do in this case?
+            # See https://github.com/chime-experiment/bondia/issues/23
+            if len(this_cyl_sep) == 0:
+                continue
+
             # Index map for baseline (y-axis)
             baseline_index = y[this_cyl_sep]
 
