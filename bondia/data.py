@@ -29,6 +29,25 @@ class DataLoader(Reader):
     def index(self):
         return self._index
 
+    def days(self, revision: str):
+        return list(self._index[revision].keys())
+
+    @property
+    def revisions(self):
+        return list(self._index.keys())
+
+    @property
+    def latest_revision(self):
+        """
+        Get latest revision.
+
+        Note
+        ----
+        This assumes the revisions being numbered like "rev_00", "rev_01", "rev_17", where their
+        order is the same as the revision strings sorted by python string comparison.
+        """
+        return sorted(self.revisions)[-1]
+
     def index_files(self, dirs):
         """
         (Re)index delay spectrum files.
@@ -44,29 +63,47 @@ class DataLoader(Reader):
         """
         if isinstance(dirs, os.PathLike):
             dirs = [dirs]
-        files = []
+
+        new_lsd = {}
         for d in dirs:
-            files += sorted(glob.glob(os.path.join(d, "delayspectrum_lsd_*.h5")))
-        logger.debug("Found files: {}".format(files))
+            rev_dirs = glob.glob(os.path.join(d, "rev_*"))
+            for rev_dir in rev_dirs:
+                if not os.path.isdir(rev_dir):
+                    logger.debug(
+                        f"Skipping {rev_dir} because it's not a (revision) directory."
+                    )
+                    continue
+                rev = os.path.split(rev_dir)[-1]
+                files = sorted(
+                    glob.glob(os.path.join(rev_dir, "*/delayspectrum_lsd_*.h5"))
+                )
+                logger.debug(f"Found {rev} files: {files}")
 
-        lsd = np.array(
-            [int(os.path.splitext(os.path.basename(ff))[0][-4:]) for ff in files]
-        )
-        new_lsd = []
+                if rev not in self._index:
+                    self._index[rev] = {}
+                    new_lsd[rev] = []
 
-        for cc, filename in zip(lsd, files):
-            if cc not in self._index:
-                cc = Day.from_lsd(cc)
-                logger.info(f"Found new data for day {cc}.")
-                self._index[cc] = filename
-                new_lsd.append(cc)
+                lsd = np.array(
+                    [
+                        int(os.path.splitext(os.path.basename(ff))[0][-4:])
+                        for ff in files
+                    ]
+                )
 
+                for cc, filename in zip(lsd, files):
+                    if cc not in self._index:
+                        cc = Day.from_lsd(cc)
+                        self._index[rev][cc] = filename
+                        new_lsd[rev].append(cc)
+                logger.info(f"Found new {rev} data for days {new_lsd[rev]}.")
         return new_lsd
 
-    def load_file(self, day: Day):
+    def load_file(self, revision: str, day: Day):
         """Load the delay spectrum of one day from a file."""
-        if isinstance(self._index[day], containers.DelaySpectrum):
-            return self._index[day]
-        logger.info(f"Loading day {day}.")
-        self._index[day] = containers.DelaySpectrum.from_file(self._index[day])
-        return self._index[day]
+        if isinstance(self._index[revision][day], containers.DelaySpectrum):
+            return self._index[revision][day]
+        logger.info(f"Loading revision {revision} data for day {day}.")
+        self._index[revision][day] = containers.DelaySpectrum.from_file(
+            self._index[revision][day]
+        )
+        return self._index[revision][day]
