@@ -59,8 +59,8 @@ class BondiaGui:
             components.append((f"toggle_{p.id}", self._toggle_plot[p.id]))
             components.append((f"plot_{p.id}", p.panel_row))
 
-        for l, c in components:
-            template.add_panel(l, c)
+        for name, c in components:
+            template.add_panel(name, c)
         return template
 
     def render(self):
