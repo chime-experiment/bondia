@@ -15,19 +15,35 @@ class BondiaGui:
         delay = DelaySpectrumPlot(self._data)
         self._plot[delay.id] = delay
 
-        # TODO: keep available days outside plot
-        day_selector = pn.widgets.Select(
-            options=list(self._data.index.keys()), width=self._width_drawer_widgets,
+        # Load revision, lsd selectors and set initial values
+        rev_selector = pn.widgets.Select(
+            options=list(self._data.revisions),
+            width=self._width_drawer_widgets,
+            name="Select Data Revision",
+            value=self._data.latest_revision,
         )
-
-        # Set initial value
+        delay.revision = rev_selector.value
+        day_selector = pn.widgets.Select(
+            options=list(self._data.days(delay.revision)),
+            width=self._width_drawer_widgets,
+            name="Select Sidereal Day",
+        )
         delay.lsd = day_selector.value
 
-        # Link selected day to plots
+        def update_days(day_selector, event):
+            """Update days depending on selected revision."""
+            old_selected_day = day_selector.value
+            day_selector.options = list(self._data.days(event.new))
+            new_selected_day = old_selected_day.closest_after(day_selector.options)
+            day_selector.value = new_selected_day
+
+        # Link selected day, revision to plots
+        rev_selector.link(delay, value="revision")
+        rev_selector.link(day_selector, callbacks={"value": update_days})
         day_selector.link(delay, value="lsd")
 
         # Fill the template with components
-        components = [("day_selector", day_selector)]
+        components = [("day_selector", day_selector), ("rev_selector", rev_selector)]
 
         # Fill in the plot selection toggle buttons
         for p in self._plot.values():

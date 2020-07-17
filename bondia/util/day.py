@@ -33,3 +33,15 @@ class Day:
 
     def __repr__(self):
         return f"{self.lsd} [{self.date.isoformat()} (PT)]"
+
+    def closest_after(self, days):
+        for day in reversed(days):
+            if self._lsd >= day.lsd:
+                return day
+        return self.closest_before(days)
+
+    def closest_before(self, days):
+        for day in days:
+            if self._lsd <= day.lsd:
+                return day
+        return self.closest_after(days)
