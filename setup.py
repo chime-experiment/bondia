@@ -26,5 +26,8 @@ setuptools.setup(
     license="GPL v3.0",
     url="http://github.com/chime-experiment/bondia",
     install_requires=requires,
-    package_data={"bondia.templates": ["material.html", "mwc.html"],},
+    package_data={
+        "bondia.templates": ["material.html", "mwc.html"],
+        "bondia": ["login.html"],
+    },
 )
