@@ -1,6 +1,7 @@
 from chimedb.core import connect as connect_chimedb
 from chimedb.core.mediawiki import MediaWikiUser
 
+import os
 import panel as pn
 import tornado
 
@@ -12,15 +13,24 @@ def get_user(request_handler):
     return user
 
 
-next_url = "/"
+root_url = os.getenv("BONDIA_ROOT_URL", "")
+next_url = os.getenv("BONDIA_NEXT_URL", "/")
 
-login_url = "/login"
+
+# If this is done by defining login_url directly, tornado is inconsistent with the root url.
+def get_login_url(request):
+    root_url = os.getenv("BONDIA_ROOT_URL", "")
+    return root_url + "/login"
 
 
-class LoginHandler(tornado.web.RequestHandler):
+class CustomLoginHandler(tornado.web.RequestHandler):
     def get(self):
         errormessage = self.get_argument("error", "")
-        self.render("login.html", errormessage=errormessage)
+        self.render(
+            "login.html",
+            root_url=os.getenv("BONDIA_ROOT_URL", "/"),
+            errormessage=errormessage,
+        )
 
     def post(self):
         username = self.get_argument("username", "")
@@ -28,7 +38,7 @@ class LoginHandler(tornado.web.RequestHandler):
 
         if not username:
             error_msg = "?error=" + tornado.escape.url_escape("Invalid username.")
-            self.redirect(login_url + error_msg)
+            self.redirect(os.getenv("BONDIA_ROOT_URL", "") + "/login" + error_msg)
             return
 
         connect_chimedb()
@@ -36,12 +46,12 @@ class LoginHandler(tornado.web.RequestHandler):
             MediaWikiUser.authenticate(username, password)
         except UserWarning as err:
             error_msg = "?error=" + tornado.escape.url_escape(str(err))
-            self.redirect(login_url + error_msg)
+            self.redirect(os.getenv("BONDIA_ROOT_URL", "") + "/login" + error_msg)
         else:
             # make the username accessible to the panel application
             pn.state.cache["username"] = username
             self.set_current_user(username)
-            self.redirect(next_url)
+            self.redirect(os.getenv("BONDIA_NEXT_URL", "/"))
 
     def set_current_user(self, user):
         if user:
@@ -56,10 +66,16 @@ class LoginHandler(tornado.web.RequestHandler):
         return user
 
 
-logout_url = "/logout"
+logout_url = os.getenv("BONDIA_LOGOUT_URL", "/logout")
 
 
 class LogoutHandler(tornado.web.RequestHandler):
     def get(self):
         self.clear_cookie("user")
-        self.redirect(next_url)
+        self.redirect(os.getenv("BONDIA_NEXT_URL", "/"))
+
+
+def set_root_url(new_root_url: str):
+    os.environ["BONDIA_ROOT_URL"] = new_root_url
+    os.environ["BONDIA_LOGOUT_URL"] = new_root_url + "/logout"
+    os.environ["BONDIA_NEXT_URL"] = new_root_url + "/"
