@@ -1,3 +1,21 @@
+### [0.2.0]  (2020-07-23)
+
+
+### Bug Fixes
+
+* **delayspectrum:** ignore broken spectra ([eeeeac8](https://github.com/chime-experiment/bondia/commit/eeeeac8c4abad2a860b9faf036eae98664b74af5)), closes [#23](https://github.com/chime-experiment/bondia/issues/23)
+* **plot:** hide expandbutton after de/activate plot ([fc339c9](https://github.com/chime-experiment/bondia/commit/fc339c9c5c7a9544aa19e9bb85a8f69e9b546b22))
+
+
+### Features
+
+* **data:** data revisions ([c842391](https://github.com/chime-experiment/bondia/commit/c8423910d58976650a914b20d5b9e0129e9f82d7))
+* **script:** user authentication ([5da4ff4](https://github.com/chime-experiment/bondia/commit/5da4ff4499790359fee94f7662c7471857e78b90)), closes [#2](https://github.com/chime-experiment/bondia/issues/2)
+* **template:** add link to github repo ([d8dc0b0](https://github.com/chime-experiment/bondia/commit/d8dc0b0e8dda598bc1dbf289898e942d793e6683))
+* **template:** turn on drawer shadow ([045a2bd](https://github.com/chime-experiment/bondia/commit/045a2bd058cfe608e9dc3c9f84eaa8c0876ea176))
+
+
+
 ### [0.1.0] (2020-06-25)
 
 First tagged version.
