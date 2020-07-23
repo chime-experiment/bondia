@@ -17,6 +17,7 @@ class BondiaServer(Reader):
     _config_data_paths = Property({}, proptype=dict, key="data_paths")
     _template_name = Property("mwc", str, "html_template")
     _width_drawer_widgets = Property(220, int)
+    _root_url = Property(proptype=str, default="", key="root_url")
 
     def __init__(self):
         hv.extension("bokeh")
@@ -46,3 +47,7 @@ class BondiaServer(Reader):
             self._template, self._width_drawer_widgets, self.data
         ).render()
         return instance
+
+    @property
+    def root_url(self):
+        return self._root_url

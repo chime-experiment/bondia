@@ -68,7 +68,7 @@
 </head>
 <body>
     <div class="wrap">
-        <form class="login-form" action="/login" method="post">
+        <form class="login-form" action="{{ root_url }}/login" method="post">
             {% module xsrf_form_html() %}
             <div class="form-header">
                 <h3><img alt="CHIME logo" src="https://bao.chimenet.ca/wiki/images/2/20/Logo_chime_20140529_4cyl.svg"></h3>
