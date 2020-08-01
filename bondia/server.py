@@ -41,10 +41,10 @@ class BondiaServer(Reader):
         if not self.data.index:
             raise ConfigError("No data available.")
 
-    def gui_instance(self):
+    def gui_instance(self, cookie_secret):
         # logger.debug(f"Starting user session {pn.state.curdoc.session_context.id}.")
         instance = BondiaGui(
-            self._template, self._width_drawer_widgets, self.data
+            self._template, self._width_drawer_widgets, self.data, cookie_secret
         ).render()
         return instance
 

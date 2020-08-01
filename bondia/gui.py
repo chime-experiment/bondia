@@ -1,15 +1,18 @@
 import panel as pn
 
+from tornado.web import decode_signed_value
+
 from .plot.delayspectrum import DelaySpectrumPlot
 
 
 class BondiaGui:
-    def __init__(self, template, width_drawer_widgets, data_loader):
+    def __init__(self, template, width_drawer_widgets, data_loader, cookie_secret):
         self._width_drawer_widgets = width_drawer_widgets
         self._template = template
         self._plot = {}
         self._toggle_plot = {}
         self._data = data_loader
+        self.cookie_secret = cookie_secret
 
     def populate_template(self, template):
         delay = DelaySpectrumPlot(self._data)
@@ -63,12 +66,26 @@ class BondiaGui:
             template.add_panel(name, c)
         return template
 
+    @property
+    def current_user(self):
+        if self.cookie_secret is None:
+            return "-"
+        try:
+            secure_cookie = pn.state.curdoc.session_context.request.cookies["user"]
+        except KeyError:
+            return "-"
+        else:
+            user = decode_signed_value(
+                self.cookie_secret, "user", secure_cookie
+            ).decode("utf-8")
+            return user
+
     def render(self):
         template = pn.Template(self._template)
 
         template.add_variable("subtitle", "CHIME Daily Validation")
         template.add_variable("app_title", "BON DIA")
-        template.add_variable("username", pn.state.cache.get("username", "-"))
+        template.add_variable("username", self.current_user)
         template.add_variable("num_unvalidated", 19)
 
         return self.populate_template(template)

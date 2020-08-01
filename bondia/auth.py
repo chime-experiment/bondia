@@ -2,7 +2,6 @@ from chimedb.core import connect as connect_chimedb
 from chimedb.core.mediawiki import MediaWikiUser
 
 import os
-import panel as pn
 import tornado
 
 
@@ -48,8 +47,6 @@ class CustomLoginHandler(tornado.web.RequestHandler):
             error_msg = "?error=" + tornado.escape.url_escape(str(err))
             self.redirect(os.getenv("BONDIA_ROOT_URL", "") + "/login" + error_msg)
         else:
-            # make the username accessible to the panel application
-            pn.state.cache["username"] = username
             self.set_current_user(username)
             self.redirect(os.getenv("BONDIA_NEXT_URL", "/"))
 
