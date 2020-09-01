@@ -1,11 +1,13 @@
+import copy
+import holoviews as hv
 import logging
-from matplotlib import cm as matplotlib_cm
 import panel
 import param
-import holoviews as hv
+import numpy as np
+
 from holoviews.operation.datashader import datashade, rasterize
 from holoviews.plotting.util import process_cmap
-import numpy as np
+from matplotlib import cm as matplotlib_cm
 
 from .plot import BondiaPlot
 
@@ -147,7 +149,7 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
                     )
             else:
                 # set colormap
-                cmap_inferno = matplotlib_cm.__dict__["inferno"]
+                cmap_inferno = copy.copy(matplotlib_cm.get_cmap("inferno"))
                 cmap_inferno.set_under("black")
                 cmap_inferno.set_bad("lightgray")
 
