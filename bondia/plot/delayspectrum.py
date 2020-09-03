@@ -78,7 +78,7 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
         ux, uix = np.unique(np.round(x).astype(np.int), return_inverse=True)
 
         # Fill a column with plots (one per pair of cylinders)
-        all_img = panel.Column(width_policy="max")
+        all_img = panel.Row(width_policy="max")
         mplot = {}
         ylim = None
         for pp, pux in reversed(list(enumerate(ux))):
@@ -178,9 +178,6 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
                 # Fix height, but make width responsive
                 height=500,
                 responsive=True,
-                # TODO: initial width is 0 and this is only resized when a param changed.
-                # Set min width as workaround:
-                min_width=1000,
             )
 
             all_img.insert(0, img)
