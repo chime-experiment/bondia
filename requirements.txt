@@ -1,4 +1,4 @@
-bokeh==2.1.1
+bokeh==2.2.1
 caput @ git+https://github.com/radiocosmology/caput.git
 chimedb @ https://github.com/chime-experiment/chimedb.git
 chimedb.dataflag @ https://github.com/chime-experiment/chimedb_dataflag.git
