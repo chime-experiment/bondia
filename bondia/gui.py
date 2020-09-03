@@ -1,8 +1,13 @@
+import logging
 import panel as pn
 
 from tornado.web import decode_signed_value
 
 from .plot.delayspectrum import DelaySpectrumPlot
+
+
+logger = logging.getLogger(__name__)
+logger.setLevel("DEBUG")
 
 
 class BondiaGui:
@@ -70,15 +75,28 @@ class BondiaGui:
     def current_user(self):
         if self.cookie_secret is None:
             return "-"
+        # Try to find cookies. I think this will start working in panel==0.10.
+        # TODO: clean up when it works
+        secure_cookie = None
         try:
             secure_cookie = pn.state.curdoc.session_context.request.cookies["user"]
+        except AttributeError as err:
+            logger.error(err)
+            try:
+                secure_cookie = pn.state.cookies["user"]
+            except AttributeError as err:
+                logger.error(err)
+                return "FAILURE"
+            except KeyError:
+                logger.warning("User cookie not found.")
+                return "-"
         except KeyError:
+            logger.warning("User cookie not found.")
             return "-"
-        else:
-            user = decode_signed_value(
-                self.cookie_secret, "user", secure_cookie
-            ).decode("utf-8")
-            return user
+        user = decode_signed_value(self.cookie_secret, "user", secure_cookie).decode(
+            "utf-8"
+        )
+        return user
 
     def render(self):
         template = pn.Template(self._template)
