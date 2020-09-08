@@ -58,7 +58,8 @@ class BondiaGui:
         def update_data_description_day(data_description, event):
             data_description.object = f"<h1>LSD {event.new} - {rev_selector.value}</h1>"
 
-        # It's enough to link the day selector to the description, since the revision selector already is linked to the day selector in update_days.
+        # It's enough to link the day selector to the description, since the revision selector
+        # already is linked to the day selector in update_days.
         day_selector.link(
             data_description, callbacks={"value": update_data_description_day}
         )
