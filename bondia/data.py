@@ -5,6 +5,9 @@ import logging
 import numpy as np
 import os
 from pathlib import Path
+import signal
+import sys
+import threading
 
 from .util.day import Day
 
@@ -14,14 +17,41 @@ logging.basicConfig(level=logging.INFO)
 
 class DataLoader(Reader):
     delay_spectrum = Property(proptype=Path)
+    interval = Property(proptype=int, default=600)
 
     def __init__(self):
         self._index = {}
 
-    def _finalise_config(self):
-        """Do things after caput config reader is done."""
-        if self.delay_spectrum:
+        # Set up periodic data file indexing
+        self._periodic_indexer = None
+        self._indexing_done = threading.Event()
+        self._exit_event = threading.Event()
+
+        def stop_indexer(signum, frame):
+            self._exit_event.set()
+            if self._periodic_indexer:
+                self._periodic_indexer.join()
+            sys.exit()
+
+        signal.signal(signal.SIGINT, stop_indexer)
+
+    def _periodic_index(self):
+        """Periodically index new files."""
+        if not self._exit_event.is_set():
             self.index_files(self.delay_spectrum)
+            self._indexing_done.set()
+            timer = threading.Timer(self.interval, self._periodic_index)
+            timer.start()
+
+    def _finalise_config(self):
+        """Index files after caput config reader is done."""
+        if self.delay_spectrum:
+            # Start periodic indexing thread and wait until it ran once.
+            self._periodic_indexer = threading.Thread(
+                target=self._periodic_index, daemon=True
+            )
+            self._periodic_indexer.start()
+            self._indexing_done.wait()
         else:
             logger.debug("No path to delay spectrum data in config, skipping...")
 
@@ -31,6 +61,9 @@ class DataLoader(Reader):
 
     def days(self, revision: str):
         return list(self._index[revision].keys())
+
+    def lsds(self, revision: str):
+        return [day.lsd for day in self.days(revision)]
 
     @property
     def revisions(self):
@@ -81,7 +114,6 @@ class DataLoader(Reader):
 
                 if rev not in self._index:
                     self._index[rev] = {}
-                    new_lsd[rev] = []
 
                 lsd = np.array(
                     [
@@ -91,11 +123,14 @@ class DataLoader(Reader):
                 )
 
                 for cc, filename in zip(lsd, files):
-                    if cc not in self._index:
+                    if cc not in self.lsds(rev):
                         cc = Day.from_lsd(cc)
                         self._index[rev][cc] = filename
+                        if rev not in new_lsd:
+                            new_lsd[rev] = []
                         new_lsd[rev].append(cc)
-                logger.info(f"Found new {rev} data for days {new_lsd[rev]}.")
+                if rev in new_lsd:
+                    logger.info(f"Found new {rev} data for days {new_lsd[rev]}.")
         return new_lsd
 
     def load_file(self, revision: str, day: Day):
