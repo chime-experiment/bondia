@@ -38,7 +38,8 @@ class DataLoader(Reader):
     def _periodic_index(self):
         """Periodically index new files."""
         if not self._exit_event.is_set():
-            self.index_files(self.delay_spectrum)
+            if not self.index_files(self.delay_spectrum):
+                logger.debug(f"No new files found. Indexing again in {self._periodic_indexer}s")
             self._indexing_done.set()
             timer = threading.Timer(self.interval, self._periodic_index)
             timer.start()
