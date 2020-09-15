@@ -69,7 +69,7 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
         "helper_lines",
     )
     def view(self):
-        spectrum = self.data.load_file(self.revision, self.lsd)
+        spectrum = self.data.load_file(self.revision, self.lsd, "delayspectrum")
         x, y = spectrum.index_map["baseline"].T
 
         # Index map for delay (x-axis)

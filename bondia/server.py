@@ -14,7 +14,7 @@ logger.setLevel("DEBUG")
 
 
 class BondiaServer(Reader):
-    _config_data_paths = Property({}, proptype=dict, key="data_paths")
+    _config_data = Property({}, proptype=dict, key="data")
     _template_name = Property("mwc", str, "html_template")
     _width_drawer_widgets = Property(220, int)
     _root_url = Property(proptype=str, default="", key="root_url")
@@ -37,7 +37,7 @@ class BondiaServer(Reader):
             raise ConfigError(f"Can't find template '{self._template_name}'.")
 
     def _finalise_config(self):
-        self.data = DataLoader.from_config(self._config_data_paths)
+        self.data = DataLoader.from_config(self._config_data)
         if not self.data.index:
             raise ConfigError("No data available.")
 
