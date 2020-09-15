@@ -35,6 +35,7 @@ class BondiaGui:
             options=list(self._data.days(delay.revision)),
             width=self._width_drawer_widgets,
             name="Select Sidereal Day",
+            value=self._data.days(delay.revision)[-1],
         )
         delay.lsd = day_selector.value
 
