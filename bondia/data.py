@@ -1,5 +1,10 @@
+from typing import Type, Dict, Union
+
 from caput.config import Property, Reader
+from ch_pipeline.core import containers as ccontainers
+from ch_pipeline.core.containers import RingMap
 from draco.core import containers
+
 import glob
 import logging
 import numpy as np
@@ -9,14 +14,26 @@ import signal
 import sys
 import threading
 
+from draco.core.containers import DelaySpectrum
+
 from .util.day import Day
+from .util.exception import DataError
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+FILE_TYPES = {
+    "delayspectrum": "delayspectrum_lsd_*.h5",
+    "ringmap": "ringmap_validation_freqs_lsd_*.h5",
+}
+CONTAINER_TYPES: Dict[str, Type[Union[DelaySpectrum, RingMap]]] = {
+    "delayspectrum": containers.DelaySpectrum,
+    "ringmap": ccontainers.RingMap,
+}
+
 
 class DataLoader(Reader):
-    delay_spectrum = Property(proptype=Path)
+    path = Property(proptype=Path)
     interval = Property(proptype=int, default=600)
 
     def __init__(self):
@@ -46,7 +63,7 @@ class DataLoader(Reader):
 
     def _finalise_config(self):
         """Index files after caput config reader is done."""
-        if self.delay_spectrum:
+        if self.path:
             # Start periodic indexing thread and wait until it ran once.
             self._periodic_indexer = threading.Thread(
                 target=self._periodic_index, daemon=True
@@ -54,7 +71,7 @@ class DataLoader(Reader):
             self._periodic_indexer.start()
             self._indexing_done.wait()
         else:
-            logger.debug("No path to delay spectrum data in config, skipping...")
+            logger.debug("No data path in config, skipping...")
 
     @property
     def index(self):
@@ -84,7 +101,7 @@ class DataLoader(Reader):
 
     def index_files(self, dirs):
         """
-        (Re)index delay spectrum files.
+        (Re)index data files.
 
         Parameters
         ----------
@@ -98,7 +115,7 @@ class DataLoader(Reader):
         if isinstance(dirs, os.PathLike):
             dirs = [dirs]
 
-        new_lsd = {}
+        new_lsds = {}
         for d in dirs:
             rev_dirs = glob.glob(os.path.join(d, "rev_*"))
             for rev_dir in rev_dirs:
@@ -108,38 +125,77 @@ class DataLoader(Reader):
                     )
                     continue
                 rev = os.path.split(rev_dir)[-1]
-                files = sorted(
-                    glob.glob(os.path.join(rev_dir, "*/delayspectrum_lsd_*.h5"))
-                )
-                logger.debug(f"Found {rev} files: {files}")
 
-                if rev not in self._index:
-                    self._index[rev] = {}
+                lsd_dirs = sorted(glob.glob(os.path.join(rev_dir, "*")))
 
-                lsd = np.array(
-                    [
-                        int(os.path.splitext(os.path.basename(ff))[0][-4:])
-                        for ff in files
-                    ]
-                )
+                for lsd_dir in lsd_dirs:
+                    day = Day.from_lsd(int(os.path.basename(lsd_dir)))
+                    if rev not in self._index:
+                        self._index[rev] = {}
+                    if day.lsd not in self.lsds(rev):
+                        if rev not in new_lsds:
+                            new_lsds[rev] = []
+                        try:
+                            new_lsd = LSD(lsd_dir, rev, day)
+                        except DataError as err:
+                            logger.error(
+                                f"Failure loading data for {rev}, {day}: {err}"
+                            )
+                            continue
+                        else:
+                            new_lsds[rev].append(new_lsd)
+                            self._index[rev][day] = new_lsd
 
-                for cc, filename in zip(lsd, files):
-                    if cc not in self.lsds(rev):
-                        cc = Day.from_lsd(cc)
-                        self._index[rev][cc] = filename
-                        if rev not in new_lsd:
-                            new_lsd[rev] = []
-                        new_lsd[rev].append(cc)
-                if rev in new_lsd:
-                    logger.info(f"Found new {rev} data for days {new_lsd[rev]}.")
-        return new_lsd
+                if rev in new_lsds and len(new_lsds[rev]) > 0:
+                    logger.info(f"Found new {rev} data for day(s) {new_lsds[rev]}.")
 
-    def load_file(self, revision: str, day: Day):
-        """Load the delay spectrum of one day from a file."""
-        if isinstance(self._index[revision][day], containers.DelaySpectrum):
-            return self._index[revision][day]
-        logger.info(f"Loading revision {revision} data for day {day}.")
-        self._index[revision][day] = containers.DelaySpectrum.from_file(
-            self._index[revision][day]
+        return new_lsds
+
+    def load_file(self, revision: str, day: Day, file_type: str):
+        """Load the data of one day from disk."""
+        if isinstance(
+            getattr(self._index[revision][day], file_type), CONTAINER_TYPES[file_type]
+        ):
+            return getattr(self._index[revision][day], file_type)
+        logger.debug(f"Loading {file_type} file for {revision}, {day}...")
+        setattr(
+            self._index[revision][day],
+            file_type,
+            CONTAINER_TYPES[file_type].from_file(
+                getattr(self._index[revision][day], file_type)
+            ),
         )
-        return self._index[revision][day]
+        return getattr(self._index[revision][day], file_type)
+
+
+class LSD:
+    def __init__(self, path: os.PathLike, rev: str, day: Day):
+        self.delayspectrum = None
+        self.ringmap = None
+        self._day = day
+
+        for file_type, file_type_glob in FILE_TYPES.items():
+            file = glob.glob(os.path.join(path, file_type_glob))
+            if len(file) > 1:
+                raise DataError(
+                    f"Found {len(file)} {file_type} files in {path} (Expected 1)."
+                )
+            elif len(file) == 0:
+                logger.warning(
+                    f"Found {len(file)} {file_type} files in {path} (Expected 1)."
+                )
+                continue
+            file = file[0]
+
+            logger.debug(f"Found {rev} file for lsd {day}: {file}")
+
+            lsd = int(os.path.splitext(os.path.basename(file))[0][-4:])
+            if lsd != day.lsd:
+                raise DataError(
+                    f"Found file for LSD {lsd} when expecting LSD {day.lsd}: {file}"
+                )
+
+            setattr(self, file_type, file)
+
+    def __repr__(self):
+        return self._day.__repr__()
