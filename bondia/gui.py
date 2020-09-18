@@ -7,7 +7,6 @@ from .plot.delayspectrum import DelaySpectrumPlot
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel("DEBUG")
 
 
 class BondiaGui:

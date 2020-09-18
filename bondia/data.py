@@ -19,7 +19,6 @@ from .util.day import Day
 from .util.exception import DataError
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 FILE_TYPES = {
     "delayspectrum": "delayspectrum_lsd_*.h5",
