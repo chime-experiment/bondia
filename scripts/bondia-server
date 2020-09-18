@@ -44,16 +44,21 @@ logger = logging.getLogger("bondia-server")
     default=True,
     show_default=True,
 )
-def start(configfile, show, port, num_procs, websocket_origin, login):
+@click.option(
+    "--print-config/--no-print-config",
+    help="Print the config on start.",
+    default=True,
+    show_default=True,
+)
+def start(configfile, show, port, num_procs, websocket_origin, login, print_config):
 
-    # TODO: use caput.config
-    logging.basicConfig(level=logging.DEBUG)
-    logger.setLevel("DEBUG")
+    logging.basicConfig(level=logging.INFO)
 
     logger.info(f"Starting bondia-server {__version__} with config from {configfile}.")
     with pathlib.Path(configfile).open() as file:
         config = yaml.safe_load(file)
-    logger.debug(f"Loaded config: {config}")
+    if print_config:
+        logger.info(f"Loaded config: {config}")
 
     if isinstance(websocket_origin, str):
         websocket_origin = [websocket_origin]

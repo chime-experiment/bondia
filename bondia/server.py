@@ -1,4 +1,4 @@
-from caput.config import Property, Reader
+from caput.config import Property, Reader, logging_config
 import holoviews as hv
 from jinja2 import Environment, PackageLoader
 from jinja2.exceptions import TemplateNotFound
@@ -10,10 +10,10 @@ from .util.exception import ConfigError
 from .gui import BondiaGui
 
 logger = logging.getLogger(__name__)
-logger.setLevel("DEBUG")
 
 
 class BondiaServer(Reader):
+    logging = logging_config(default={"root": "INFO"})
     _config_data = Property({}, proptype=dict, key="data")
     _template_name = Property("mwc", str, "html_template")
     _width_drawer_widgets = Property(220, int)
@@ -37,6 +37,13 @@ class BondiaServer(Reader):
             raise ConfigError(f"Can't find template '{self._template_name}'.")
 
     def _finalise_config(self):
+        # Apply logging config
+        logging.basicConfig(level=getattr(logging, self.logging.get("root", "WARNING")))
+        for module, level in self.logging.items():
+            if module != "root":
+                logging.getLogger(module).setLevel(getattr(logging, level))
+        logger.debug(f"Applied logging config: {self.logging}")
+
         self.data = DataLoader.from_config(self._config_data)
         if not self.data.index:
             raise ConfigError("No data available.")
