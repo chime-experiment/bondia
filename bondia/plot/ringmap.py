@@ -49,6 +49,15 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
     # parameters
     transpose = param.Boolean(default=True)
     logarithmic_colorscale = param.Boolean(default=False)
+    # Default: turn on datashader and disable colormap range
+    serverside_rendering = param.Selector(
+        objects=[None, rasterize, datashade], default=rasterize
+    )
+    colormap_range = param.Range(default=(-5, 5), constant=False)
+
+    # Hide lsd, revision selectors by setting precedence < 0
+    lsd = param.Selector(precedence=-1)
+    revision = param.Selector(precedence=-1)
     beam = param.ObjectSelector()
     polarization = param.ObjectSelector()
     frequency = param.ObjectSelector()
@@ -56,7 +65,9 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
     mark_sun_time = param.Boolean(default=True)
     template_subtraction = param.Boolean(default=True)
     crosstalk_removal = param.Boolean(default=True)
-    apply_weight_and_flag_mask = param.Boolean(default=True)
+    weight_mask = param.Boolean(default=True)
+    weight_mask_threshold = param.Number(default=40, bounds=(0, 100))
+    flag_mask = param.Boolean(default=False)
     flags = param.ListSelector(
         objects=[
             "bad_calibration_fpga_restart",
@@ -85,16 +96,6 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
             "decorrelated_cylinder",
         ],
     )
-
-    # Default: turn on datashader and disable colormap range
-    serverside_rendering = param.Selector(
-        objects=[None, rasterize, datashade], default=rasterize
-    )
-    colormap_range = param.Range(default=(-5, 5), constant=False)
-
-    # Hide lsd, revision selectors by setting precedence < 0
-    lsd = param.Selector(precedence=-1)
-    revision = param.Selector(precedence=-1)
 
     def __init__(self, data, config, **params):
         self.data = data
@@ -151,6 +152,9 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
             rm, "pol"
         )
 
+    @param.depends("weight_mask", watch=True)
+    def update_weight_threshold_selection(self):
+        self.param["weight_mask_threshold"].constant = not self.weight_mask
 
     @property
     def param_control(self):
@@ -176,7 +180,9 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
         "mark_moon",
         "crosstalk_removal",
         "template_subtraction",
-        "apply_weight_and_flag_mask",
+        "weight_mask",
+        "weight_mask_threshold",
+        "flag_mask",
         "flags",
     )
     def view(self):
@@ -207,18 +213,22 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
         )
         rmap = np.squeeze(container.map[sel_beam, sel_pol, sel_freq])
 
-        if self.apply_weight_and_flag_mask:
+        if self.flag_mask:
             flag_time_spans = get_flags_cached(self.flags, self._cache_reset_time)
-            rms = np.squeeze(container.rms[sel_pol, sel_freq])
             csd_arr = self.lsd.lsd + container.index_map["ra"] / 360.0
-            chime_obs = ephemeris.chime_observer()
             flag_mask = np.zeros_like(csd_arr, dtype=np.bool)
+            chime_obs = ephemeris.chime_observer()
             u2l = chime_obs.unix_to_lsd
             for type_, ca, cb in flag_time_spans:
                 flag_mask[(csd_arr > u2l(ca)) & (csd_arr < u2l(cb))] = True
-            weight_mask = tools.invert_no_zero(rms) < 40.0
-            mask = (flag_mask | weight_mask)[:, np.newaxis]
-            rmap = np.where(mask, np.nan, rmap)
+            flag_mask = flag_mask[:, np.newaxis]
+            rmap = np.where(flag_mask, np.nan, rmap)
+
+        if self.weight_mask:
+            rms = np.squeeze(container.rms[sel_pol, sel_freq])
+            weight_mask = tools.invert_no_zero(rms) < self.weight_mask_threshold
+            weight_mask = weight_mask[:, np.newaxis]
+            rmap = np.where(weight_mask, np.nan, rmap)
 
         if self.template_subtraction:
             rm_stack = ccontainers.RingMap.from_file(
