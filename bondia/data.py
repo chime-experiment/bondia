@@ -156,12 +156,13 @@ class DataLoader(Reader):
         ):
             return getattr(self._index[revision][day], file_type)
         logger.debug(f"Loading {file_type} file for {revision}, {day}...")
+        path = getattr(self._index[revision][day], file_type)
+        if path is None:
+            raise DataError(f"{file_type} for day {day}, {revision} not available.")
         setattr(
             self._index[revision][day],
             file_type,
-            CONTAINER_TYPES[file_type].from_file(
-                getattr(self._index[revision][day], file_type)
-            ),
+            CONTAINER_TYPES[file_type].from_file(path),
         )
         return getattr(self._index[revision][day], file_type)
 
