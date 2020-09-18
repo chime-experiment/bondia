@@ -4,6 +4,7 @@ import panel as pn
 from tornado.web import decode_signed_value
 
 from .plot.delayspectrum import DelaySpectrumPlot
+from .plot.ringmap import RingMapPlot
 
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,9 @@ class BondiaGui:
         delay = DelaySpectrumPlot(
             self._data, self._config_plots.get("delayspectrum", {})
         )
+        ringmap = RingMapPlot(self._data, self._config_plots.get("ringmap", {}))
         self._plot[delay.id] = delay
+        self._plot[ringmap.id] = ringmap
 
         # Load revision, lsd selectors and set initial values
         rev_selector = pn.widgets.Select(
@@ -35,13 +38,15 @@ class BondiaGui:
             value=self._data.latest_revision,
         )
         delay.revision = rev_selector.value
+        ringmap.revision = rev_selector.value
         day_selector = pn.widgets.Select(
-            options=list(self._data.days(delay.revision)),
+            options=list(self._data.days(rev_selector.value)),
             width=self._width_drawer_widgets,
             name="Select Sidereal Day",
-            value=self._data.days(delay.revision)[-1],
+            value=self._data.days(rev_selector.value)[-1],
         )
         delay.lsd = day_selector.value
+        ringmap.lsd = day_selector.value
 
         def update_days(day_selector, event):
             """Update days depending on selected revision."""
@@ -52,8 +57,10 @@ class BondiaGui:
 
         # Link selected day, revision to plots
         rev_selector.link(delay, value="revision")
+        rev_selector.link(ringmap, value="revision")
         rev_selector.link(day_selector, callbacks={"value": update_days})
         day_selector.link(delay, value="lsd")
+        day_selector.link(ringmap, value="lsd")
 
         # Add a title over the plots showing the selected day and rev (and keep it updated)
         data_description = pn.pane.Markdown(

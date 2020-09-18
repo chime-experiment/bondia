@@ -1,4 +1,4 @@
-from panel import Column, Row, Param
+from panel import Column, Row, Param, widgets
 
 
 class BondiaPlot:
@@ -30,7 +30,17 @@ class BondiaPlot:
                     # Stop param from showing the expand button of the datashading function
                     # selector. It would be nice to show it, but there are options that can make
                     # the whole server crash.
-                    Row(self.view, Param(self, expand_button=False)),
+                    # Also manually set the widget type for the ringmap param 'flags'.
+                    Row(
+                        self.view,
+                        Param(
+                            self,
+                            expand_button=False,
+                            widgets={
+                                "flags": widgets.MultiChoice,
+                            },
+                        ),
+                    ),
                     width_policy="max",
                 )
             else:
