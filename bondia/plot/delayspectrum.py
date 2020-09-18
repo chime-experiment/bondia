@@ -10,6 +10,7 @@ from holoviews.plotting.util import process_cmap
 from matplotlib import cm as matplotlib_cm
 
 from .plot import BondiaPlot
+from ..util.exception import DataError
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,13 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
         "helper_lines",
     )
     def view(self):
-        spectrum = self.data.load_file(self.revision, self.lsd, "delayspectrum")
+        try:
+            spectrum = self.data.load_file(self.revision, self.lsd, "delayspectrum")
+        except DataError as err:
+            return panel.pane.Markdown(
+                f"Error: {str(err)}. Please report this problem."
+            )
+
         x, y = spectrum.index_map["baseline"].T
 
         # Index map for delay (x-axis)
