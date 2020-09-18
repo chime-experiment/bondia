@@ -225,6 +225,8 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
                 self._stack_path, freq_sel=sel_freq
             )
             rm_stack_arr = np.squeeze(rm_stack.map[sel_beam, sel_pol])
+
+            # FIXME: this is a hack. remove when rinmap stack file fixed.
             rmap -= rm_stack_arr.reshape(rm_stack_arr.shape[0], -1, 2).mean(axis=-1)
 
         if self.crosstalk_removal:
