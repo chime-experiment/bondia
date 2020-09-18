@@ -79,7 +79,9 @@ class BondiaGui:
                 value=True,
                 width=self._width_drawer_widgets,
             )
-            self._toggle_plot[p.id].param.watch(self.update_widget, "value")
+            self._toggle_plot[p.id].param.watch(
+                lambda event: self.toggle_plot(event, p.id, p.name_), "value"
+            )
             self._toggle_plot[p.id].param.trigger("value")
 
             components.append((f"toggle_{p.id}", self._toggle_plot[p.id]))
@@ -126,14 +128,13 @@ class BondiaGui:
 
         return self.populate_template(template)
 
-    def update_widget(self, event):
-        id = "delay_spectrum"
+    def toggle_plot(self, event, id, name):
         toggle = self._toggle_plot[id]
         if event.new:
             self._plot[id].panel_row = True
             toggle.button_type = "success"
-            toggle.name = "Deactivate Delay Spectrum"
+            toggle.name = f"Deactivate {name}"
         else:
             self._plot[id].panel_row = False
             toggle.button_type = "danger"
-            toggle.name = "Activate Delay Spectrum"
+            toggle.name = f"Activate {name}"
