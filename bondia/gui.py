@@ -74,7 +74,7 @@ class BondiaGui:
         # Fill in the plot selection toggle buttons
         for p in self._plot.values():
             self._toggle_plot[p.id] = pn.widgets.Toggle(
-                name=f"Deactivate {p.name}",
+                name=f"Deactivate {p.name_}",
                 button_type="success",
                 value=True,
                 width=self._width_drawer_widgets,
