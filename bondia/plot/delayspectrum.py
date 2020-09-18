@@ -116,17 +116,22 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
             xlim = (range_x[0], range_x[-1])
             ylim = ylim_max
 
+            # axis names
+            axis_name_tau = "τ [nsec]"
+            axis_name_y = "y [m]"
+
             # Make image
             if self.transpose:
                 mplot[pp] = spectrum.spectrum[this_cyl_sep, :].T
                 index_x = baseline_index
                 index_y = index_map_delay_nsec
                 xlim, ylim = ylim, xlim
-
+                axis_names = [axis_name_y, axis_name_tau]
             else:
                 mplot[pp] = spectrum.spectrum[this_cyl_sep, :]
                 index_x = index_map_delay_nsec
                 index_y = baseline_index
+                axis_names = [axis_name_tau, axis_name_y]
 
             # holoviews checks for regular sampling before plotting an Image.
             # The CHIME baselines are not regularly sampled enough to pass through the default rtol
@@ -134,7 +139,7 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
             img = hv.Image(
                 (index_x, index_y, mplot[pp]),
                 datatype=["image", "grid"],
-                kdims=["τ [nsec]", "y [m]"],
+                kdims=axis_names,
                 rtol=2,
             ).opts(
                 clim=self.colormap_range,
