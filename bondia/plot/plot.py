@@ -1,4 +1,4 @@
-from panel import Column, Row, Param, widgets
+from panel import Column, Row, Param
 
 
 class BondiaPlot:
@@ -21,6 +21,13 @@ class BondiaPlot:
         return f"## {self._name}"
 
     @property
+    def param_control(self):
+        return Param(
+            self.param,
+            expand_button=False,
+        )
+
+    @property
     def panel_row(self):
         if self._panel_col is None:
             if self._panel_col_active:
@@ -31,16 +38,7 @@ class BondiaPlot:
                     # selector. It would be nice to show it, but there are options that can make
                     # the whole server crash.
                     # Also manually set the widget type for the ringmap param 'flags'.
-                    Row(
-                        self.view,
-                        Param(
-                            self,
-                            expand_button=False,
-                            widgets={
-                                "flags": widgets.MultiChoice,
-                            },
-                        ),
-                    ),
+                    Row(self.view, self.param_control),
                     width_policy="max",
                 )
             else:
@@ -54,7 +52,7 @@ class BondiaPlot:
             if value:
                 self._panel_col[0] = self.title
                 self._panel_col[1][0] = self.view
-                self._panel_col[1][1] = Param(self, expand_button=False)
+                self._panel_col[1][1] = self.param_control
             else:
                 self._panel_col[0] = None
                 self._panel_col[1][0] = None
