@@ -151,6 +151,18 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
             rm, "pol"
         )
 
+
+    @property
+    def param_control(self):
+        p = panel.param.Param(
+            self.param,
+            expand_button=False,
+            widgets={
+                "flags": panel.widgets.MultiChoice,
+            },
+        )
+        return panel.Column(p)
+
     @param.depends(
         "lsd",
         "transpose",
