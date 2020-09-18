@@ -48,7 +48,7 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
     lsd = param.Selector(precedence=-1)
     revision = param.Selector(precedence=-1)
 
-    def __init__(self, data, **params):
+    def __init__(self, data, config, **params):
         self.data = data
         self.selections = None
         BondiaPlot.__init__(self, "Delay Spectrum")
