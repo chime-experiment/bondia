@@ -13,7 +13,7 @@ class BondiaPlot:
         return self._id
 
     @property
-    def name(self):
+    def name_(self):
         return self._name
 
     @property
