@@ -83,6 +83,13 @@ jobs:
         token: ${{ secrets.ACCESS_TOKEN }}
         path: "ch_util"
 
+    - name: Clone ch_pipeline from private repo
+      uses: actions/checkout@v2
+      with:
+        repository: chime-experiment/ch_pipeline
+        token: ${{ secrets.ACCESS_TOKEN }}
+        path: "ch_pipeline"
+
     - uses: actions/cache@v2
       with:
         path: ~/.cache/pip
@@ -121,6 +128,12 @@ jobs:
     - name: Install ch_util
       run: |
         cd ch_util
+        pip install .
+        cd ..
+
+    - name: Install ch_pipeline
+      run: |
+        cd ch_pipeline
         pip install .
         cd ..
 
