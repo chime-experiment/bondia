@@ -10,16 +10,21 @@ logger = logging.getLogger(__name__)
 
 
 class BondiaGui:
-    def __init__(self, template, width_drawer_widgets, data_loader, cookie_secret):
+    def __init__(
+        self, template, width_drawer_widgets, data_loader, config_plots, cookie_secret
+    ):
         self._width_drawer_widgets = width_drawer_widgets
         self._template = template
         self._plot = {}
         self._toggle_plot = {}
         self._data = data_loader
         self.cookie_secret = cookie_secret
+        self._config_plots = config_plots
 
     def populate_template(self, template):
-        delay = DelaySpectrumPlot(self._data)
+        delay = DelaySpectrumPlot(
+            self._data, self._config_plots.get("delayspectrum", {})
+        )
         self._plot[delay.id] = delay
 
         # Load revision, lsd selectors and set initial values

@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 class BondiaServer(Reader):
     logging = logging_config(default={"root": "INFO"})
     _config_data = Property({}, proptype=dict, key="data")
+    _config_plots = Property({}, proptype=dict, key="plots")
     _template_name = Property("mwc", str, "html_template")
     _width_drawer_widgets = Property(220, int)
     _root_url = Property(proptype=str, default="", key="root_url")
@@ -51,7 +52,11 @@ class BondiaServer(Reader):
     def gui_instance(self, cookie_secret):
         # logger.debug(f"Starting user session {pn.state.curdoc.session_context.id}.")
         instance = BondiaGui(
-            self._template, self._width_drawer_widgets, self.data, cookie_secret
+            self._template,
+            self._width_drawer_widgets,
+            self.data,
+            self._config_plots,
+            cookie_secret,
         ).render()
         return instance
 
