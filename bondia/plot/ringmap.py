@@ -61,8 +61,11 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
     beam = param.ObjectSelector()
     polarization = param.ObjectSelector()
     frequency = param.ObjectSelector()
+
+    # FIXME: implement
     mark_moon = param.Boolean(default=True)
     mark_sun_time = param.Boolean(default=True)
+
     template_subtraction = param.Boolean(default=True)
     crosstalk_removal = param.Boolean(default=True)
     weight_mask = param.Boolean(default=True)
