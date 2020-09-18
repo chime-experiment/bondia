@@ -25,13 +25,11 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
     log
         True for logarithmic color map (z-values). Default `True`.
     colormap_range
-        Range for the colormap (z-values).
+        (optional, if using datashader) Select limits of color map values (z-values). Default
+        `None`.
     serverside_rendering
         True to use datashader. Automatically selects colormap for every zoom level, sends
         pre-rendered images to client. Default `True`.
-    colormap_range
-        (optional, if using datashader) Select limits of color map values (z-values). Default
-        `None`.
     """
 
     # parameters
