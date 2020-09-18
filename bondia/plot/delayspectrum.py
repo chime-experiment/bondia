@@ -188,6 +188,7 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
                 # Fix height, but make width responsive
                 height=500,
                 responsive=True,
+                shared_axes=False,
             )
 
             all_img.insert(0, img)
