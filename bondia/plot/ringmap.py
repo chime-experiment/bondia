@@ -40,6 +40,9 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
         pre-rendered images to client. Default `True`.
     """
 
+    # Display text for polarization option: mean of XX and YY
+    mean_pol_text = "Mean(XX, YY)"
+
     # Config
     _stack_path = Property(proptype=str, key="stack")
     _cache_reset_time = Property(
@@ -151,9 +154,12 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
         except DataError as err:
             logger.error(f"Unable to get available polarisations from file: {err}")
             return
-        self.param["polarization"].objects, self.polarization = self.make_selection(
-            rm, "pol"
-        )
+        objects, value = self.make_selection(rm, "pol")
+        if "XX" in objects and "YY" in objects:
+            objects.append(self.mean_pol_text)
+            value = self.mean_pol_text
+        self.param["polarization"].objects = objects
+        self.polarization = value
 
     @param.depends("weight_mask", watch=True)
     def update_weight_threshold_selection(self):
@@ -209,12 +215,20 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
         ylim = (0, 360)
 
         # Apply data selections
-        sel_beam = np.where(container.index_map["beam"] == self.beam)
-        sel_pol = np.where(container.index_map["pol"] == self.polarization)
+        sel_beam = np.where(container.index_map["beam"] == self.beam)[0]
         sel_freq = np.where(
             [f[0] for f in container.index_map["freq"]] == self.frequency
-        )
-        rmap = np.squeeze(container.map[sel_beam, sel_pol, sel_freq])
+        )[0]
+        if self.polarization == self.mean_pol_text:
+            sel_pol = np.where(
+                (container.index_map["pol"] == "XX")
+                | (container.index_map["pol"] == "YY")
+            )[0]
+            rmap = np.squeeze(container.map[sel_beam, sel_pol, sel_freq])
+            rmap = np.nanmean(rmap, axis=0)
+        else:
+            sel_pol = np.where(container.index_map["pol"] == self.polarization)[0]
+            rmap = np.squeeze(container.map[sel_beam, sel_pol, sel_freq])
 
         if self.flag_mask:
             flag_time_spans = get_flags_cached(self.flags, self._cache_reset_time)
@@ -229,6 +243,8 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
 
         if self.weight_mask:
             rms = np.squeeze(container.rms[sel_pol, sel_freq])
+            if self.polarization == self.mean_pol_text:
+                rms = np.nanmean(rms, axis=0)
             weight_mask = tools.invert_no_zero(rms) < self.weight_mask_threshold
             weight_mask = weight_mask[:, np.newaxis]
             rmap = np.where(weight_mask, np.nan, rmap)
@@ -237,10 +253,12 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
             rm_stack = ccontainers.RingMap.from_file(
                 self._stack_path, freq_sel=sel_freq
             )
-            rm_stack_arr = np.squeeze(rm_stack.map[sel_beam, sel_pol])
+            rm_stack = np.squeeze(rm_stack.map[sel_beam, sel_pol, sel_freq])
+            if self.polarization == self.mean_pol_text:
+                rm_stack = np.nanmean(rm_stack, axis=0)
 
             # FIXME: this is a hack. remove when rinmap stack file fixed.
-            rmap -= rm_stack_arr.reshape(rm_stack_arr.shape[0], -1, 2).mean(axis=-1)
+            rmap -= rm_stack.reshape(rm_stack.shape[0], -1, 2).mean(axis=-1)
 
         if self.crosstalk_removal:
             # The mean of an all-nan slice (masked?) is nan. We don't need a warning about that.
