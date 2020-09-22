@@ -84,20 +84,55 @@ class BondiaGui:
         ]
 
         # Fill in the plot selection toggle buttons
-        for p in self._plot.values():
-            self._toggle_plot[p.id] = pn.widgets.Toggle(
-                name=f"Deactivate {p.name_}",
-                button_type="success",
-                value=True,
-                width=self._width_drawer_widgets,
-            )
-            self._toggle_plot[p.id].param.watch(
-                lambda event: self.toggle_plot(event, p.id, p.name_), "value"
-            )
-            self._toggle_plot[p.id].param.trigger("value")
+        self._toggle_plot[delay.id] = pn.widgets.Toggle(
+            name=f"Deactivate {delay.name_}",
+            button_type="success",
+            value=True,
+            width=self._width_drawer_widgets,
+        )
 
-            components.append((f"toggle_{p.id}", self._toggle_plot[p.id]))
-            components.append((f"plot_{p.id}", p.panel_row))
+        def toggle_delay(event):
+            logger.info(f"Toggling {delay.name_} ({delay.id}): {event.new} {event}")
+            if event.new:
+                self._plot[delay.id].panel_row = True
+                self._toggle_plot[delay.id].button_type = "success"
+                self._toggle_plot[delay.id].name = f"Deactivate {delay.name_}"
+            else:
+                self._plot[delay.id].panel_row = False
+                self._toggle_plot[delay.id].button_type = "danger"
+                self._toggle_plot[delay.id].name = f"Activate {delay.name_}"
+
+        self._toggle_plot[delay.id].param.watch(toggle_delay, "value")
+        self._toggle_plot[delay.id].param.trigger("value")
+        for t in self._toggle_plot.values():
+            t.param.trigger("value")
+        components.append((f"toggle_{delay.id}", self._toggle_plot[delay.id]))
+        components.append((f"plot_{delay.id}", delay.panel_row))
+
+        self._toggle_plot[ringmap.id] = pn.widgets.Toggle(
+            name=f"Deactivate {ringmap.name_}",
+            button_type="success",
+            value=True,
+            width=self._width_drawer_widgets,
+        )
+
+        def toggle_ringmap(event):
+            logger.info(f"Toggling {ringmap.name_} ({ringmap.id}): {event.new} {event}")
+            if event.new:
+                self._plot[ringmap.id].panel_row = True
+                self._toggle_plot[ringmap.id].button_type = "success"
+                self._toggle_plot[ringmap.id].name = f"Deactivate {ringmap.name_}"
+            else:
+                self._plot[ringmap.id].panel_row = False
+                self._toggle_plot[ringmap.id].button_type = "danger"
+                self._toggle_plot[ringmap.id].name = f"Activate {ringmap.name_}"
+
+        self._toggle_plot[ringmap.id].param.watch(toggle_ringmap, "value")
+        self._toggle_plot[ringmap.id].param.trigger("value")
+        for t in self._toggle_plot.values():
+            t.param.trigger("value")
+        components.append((f"toggle_{ringmap.id}", self._toggle_plot[ringmap.id]))
+        components.append((f"plot_{ringmap.id}", ringmap.panel_row))
 
         for name, c in components:
             template.add_panel(name, c)
@@ -139,14 +174,3 @@ class BondiaGui:
         template.add_variable("num_unvalidated", 19)
 
         return self.populate_template(template)
-
-    def toggle_plot(self, event, id, name):
-        toggle = self._toggle_plot[id]
-        if event.new:
-            self._plot[id].panel_row = True
-            toggle.button_type = "success"
-            toggle.name = f"Deactivate {name}"
-        else:
-            self._plot[id].panel_row = False
-            toggle.button_type = "danger"
-            toggle.name = f"Activate {name}"
