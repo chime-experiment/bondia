@@ -20,7 +20,7 @@ from .plot import BondiaPlot
 # TODO: the ephemeris module will get moved to caput soon
 from ..util.ephemeris import source_transit, source_rise_set
 from ..util.exception import DataError
-from ..util.flags import get_flags_cached
+from ..util.flags import get_flags_cached, get_flags
 
 logger = logging.getLogger(__name__)
 
@@ -54,8 +54,9 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
     # Config
     _stack_path = Property(proptype=str, key="stack")
     _cache_reset_time = Property(
-        proptype=int, key="flag_cache_reset_seconds", default=20
-    )  # 86400)
+        proptype=int, key="flag_cache_reset_seconds", default=86400
+    )
+    _cache_flags = Property(proptype=bool, key="cache_flags", default=False)
 
     # parameters
     transpose = param.Boolean(default=True)
@@ -81,7 +82,7 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
     crosstalk_removal = param.Boolean(default=True)
     weight_mask = param.Boolean(default=True)
     weight_mask_threshold = param.Number(default=40, bounds=(0, 100))
-    flag_mask = param.Boolean(default=False)
+    flag_mask = param.Boolean(default=True)
     flags = param.ListSelector(
         objects=[
             "bad_calibration_fpga_restart",
@@ -237,11 +238,17 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
             rmap = np.squeeze(container.map[sel_beam, sel_pol, sel_freq])
 
         if self.flag_mask:
-            flag_time_spans = get_flags_cached(self.flags, self._cache_reset_time)
+            if self._cache_flags:
+                flag_time_spans = get_flags_cached(self.flags, self._cache_reset_time)
+            else:
+                flag_time_spans = get_flags(
+                    self.flags,
+                    self._chime_obs.lsd_to_unix(self.lsd.lsd),
+                    self._chime_obs.lsd_to_unix(self.lsd.lsd + 1),
+                )
             csd_arr = self.lsd.lsd + container.index_map["ra"] / 360.0
             flag_mask = np.zeros_like(csd_arr, dtype=np.bool)
-            chime_obs = ephemeris.chime_observer()
-            u2l = chime_obs.unix_to_lsd
+            u2l = self._chime_obs.unix_to_lsd
             for type_, ca, cb in flag_time_spans:
                 flag_mask[(csd_arr > u2l(ca)) & (csd_arr < u2l(cb))] = True
             flag_mask = flag_mask[:, np.newaxis]

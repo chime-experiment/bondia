@@ -14,6 +14,38 @@ cache_ts_lock = threading.Lock()
 cache_ts = 0
 
 
+def get_flags(flag_types: List[str], start_time: float, end_time: float):
+    """
+    Get CHIME data flags for a given time range from the database.
+
+    Parameters
+    ----------
+    flag_types: List[str]
+        Types of flags to request.
+    start_time: float
+        Include all flags after this. UNIX time.
+    end_time: float
+        Include all flags before this. UNIX time.
+
+    Returns
+    -------
+    List[Tuple[str, float, float]]
+        List of flags: type name with start and end time.
+    """
+    flags = (
+        df.DataFlag.select()
+        .join(df.DataFlagType)
+        .where(
+            (df.DataFlagType.name << flag_types)
+            & (
+                (df.DataFlag.start_time < end_time)
+                | (df.DataFlag.finish_time > start_time)
+            )
+        )
+    )
+    return [(f.type.name, f.start_time, f.finish_time) for f in flags]
+
+
 def get_flags_cached(flag_types: List[str], cache_reset_time: int = -1):
     """
     Get CHIME data flags from the database.
