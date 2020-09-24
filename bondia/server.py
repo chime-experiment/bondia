@@ -5,11 +5,16 @@ from jinja2.exceptions import TemplateNotFound
 import logging
 import panel as pn
 
+from chimedb.core import connect as chimedbconnect
+
 from .data import DataLoader
 from .util.exception import ConfigError
 from .gui import BondiaGui
 
 logger = logging.getLogger(__name__)
+
+# Open DB connection
+chimedbconnect(reconnect=True)
 
 
 class BondiaServer(Reader):
