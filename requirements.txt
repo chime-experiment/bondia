@@ -10,5 +10,7 @@ draco @ git+https://github.com/radiocosmology/draco.git
 jinja2
 holoviews
 matplotlib
+numpy
 panel==0.9.7
 param
+skyfield<=1.26
