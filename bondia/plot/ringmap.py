@@ -16,6 +16,9 @@ from ch_pipeline.core import containers as ccontainers
 from ch_util import ephemeris, tools
 
 from .plot import BondiaPlot
+
+# TODO: the ephemeris module will get moved to caput soon
+from ..util.ephemeris import source_transit, source_rise_set
 from ..util.exception import DataError
 from ..util.flags import get_flags_cached
 
@@ -43,6 +46,11 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
     # Display text for polarization option: mean of XX and YY
     mean_pol_text = "Mean(XX, YY)"
 
+    # Limits to display in ringmap heatmap
+    xlim = (-1, 1)
+    ylim = (0, 360)
+    zlim = (-5, 5)
+
     # Config
     _stack_path = Property(proptype=str, key="stack")
     _cache_reset_time = Property(
@@ -56,7 +64,7 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
     serverside_rendering = param.Selector(
         objects=[None, rasterize, datashade], default=rasterize
     )
-    colormap_range = param.Range(default=(-5, 5), constant=False)
+    colormap_range = param.Range(default=zlim, constant=False)
 
     # Hide lsd, revision selectors by setting precedence < 0
     lsd = param.Selector(precedence=-1)
@@ -67,7 +75,7 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
 
     # FIXME: implement
     mark_moon = param.Boolean(default=True)
-    mark_sun_time = param.Boolean(default=True)
+    mark_day_time = param.Boolean(default=True)
 
     template_subtraction = param.Boolean(default=True)
     crosstalk_removal = param.Boolean(default=True)
@@ -106,6 +114,8 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
     def __init__(self, data, config, **params):
         self.data = data
         self.selections = None
+        self._chime_obs = ephemeris.chime_observer()
+
         BondiaPlot.__init__(self, "Ringmap")
         param.Parameterized.__init__(self, **params)
         self.read_config(config)
@@ -185,7 +195,7 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
         "beam",
         "polarization",
         "frequency",
-        "mark_sun_time",
+        "mark_day_time",
         "mark_moon",
         "crosstalk_removal",
         "template_subtraction",
@@ -209,10 +219,6 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
         # Index map for sin(ZA)/sin(theta) (y-axis)
         index_map_el = container.index_map["el"]
         axis_name_el = "sin(\u03B8)"
-
-        # Data spans
-        xlim = (-1, 1)
-        ylim = (0, 360)
 
         # Apply data selections
         sel_beam = np.where(container.index_map["beam"] == self.beam)[0]
@@ -271,11 +277,12 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
             index_x = index_map_ra
             index_y = index_map_el
             axis_names = [axis_name_ra, axis_name_el]
-            xlim, ylim = ylim, xlim
+            xlim, ylim = self.ylim, self.xlim
         else:
             index_x = index_map_el
             index_y = index_map_ra
             axis_names = [axis_name_el, axis_name_ra]
+            xlim, ylim = self.xlim, self.ylim
 
         img = hv.Image(
             (index_x, index_y, rmap),
@@ -311,6 +318,74 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
                 y_range=ylim,
                 normalization=normalization,
             )
+
+        if self.mark_moon:
+            # Put a ring around the location of the moon if it transits on this day
+            eph = ephemeris.skyfield_wrapper.ephemeris
+
+            # Start and end times of the CSD
+            st = self._chime_obs.lsd_to_unix(self.lsd.lsd)
+            et = self._chime_obs.lsd_to_unix(self.lsd.lsd + 1)
+
+            moon_time, moon_dec = source_transit(
+                self._chime_obs.skyfield_obs(), eph["moon"], st, et, return_dec=True
+            )
+
+            if len(moon_time):
+                lunar_transit = self._chime_obs.unix_to_lsd(moon_time[0])
+                lunar_dec = moon_dec[0]
+                lunar_ra = (lunar_transit % 1) * 360.0
+                lunar_za = np.sin(np.radians(lunar_dec - 49.0))
+                if self.transpose:
+                    img *= hv.Ellipse(lunar_ra, lunar_za, (5.5, 0.15))
+                else:
+                    img *= hv.Ellipse(lunar_za, lunar_ra, (0.04, 21))
+
+        if self.mark_day_time:
+            # Calculate the sun rise/set times on this sidereal day (it's not clear to me there
+            # is exactly one of each per day, I think not)
+            sf_obs = self._chime_obs.skyfield_obs()
+
+            # Start and end times of the CSD
+            start_time = self._chime_obs.lsd_to_unix(self.lsd.lsd)
+            end_time = self._chime_obs.lsd_to_unix(self.lsd.lsd + 1)
+
+            times, rises = source_rise_set(
+                sf_obs,
+                ephemeris.skyfield_wrapper.ephemeris["sun"],
+                start_time,
+                end_time,
+                diameter=-10,
+            )
+            sun_rise = 0
+            sun_set = 0
+            for t, r in zip(times, rises):
+                if r:
+                    sun_rise = (self._chime_obs.unix_to_lsd(t) % 1) * 360
+                else:
+                    sun_set = (self._chime_obs.unix_to_lsd(t) % 1) * 360
+
+            # Highlight the day time data
+            opts = {
+                "color": "grey",
+                "alpha": 0.5,
+                "line_width": 1,
+                "line_color": "black",
+                "line_dash": "dashed",
+            }
+            if self.transpose:
+                if sun_rise < sun_set:
+                    img *= hv.VSpan(sun_rise, sun_set).opts(**opts)
+                else:
+                    img *= hv.VSpan(self.ylim[0], sun_set).opts(**opts)
+                    img *= hv.VSpan(sun_rise, self.ylim[1]).opts(**opts)
+
+            else:
+                if sun_rise < sun_set:
+                    img *= hv.HSpan(sun_rise, sun_set).opts(**opts)
+                else:
+                    img *= hv.HSpan(self.ylim[0], sun_set).opts(**opts)
+                    img *= hv.HSpan(sun_rise, self.ylim[1]).opts(**opts)
 
         img.opts(
             # Fix height, but make width responsive
