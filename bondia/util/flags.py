@@ -6,7 +6,6 @@ from functools import lru_cache
 from typing import List
 
 from chimedb import dataflag as df
-from chimedb.core import connect as chimedbconnect
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +65,6 @@ def get_one_flag_type(flag_type: str):
     List[Tuple[str, float, float]]
         List of flags: type name with start and end time.
     """
-    chimedbconnect()
     flags = (
         df.DataFlag.select()
         .join(df.DataFlagType)
