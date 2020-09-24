@@ -92,7 +92,6 @@ class BondiaGui:
         )
 
         def toggle_delay(event):
-            logger.info(f"Toggling {delay.name_} ({delay.id}): {event.new} {event}")
             if event.new:
                 self._plot[delay.id].panel_row = True
                 self._toggle_plot[delay.id].button_type = "success"
@@ -117,7 +116,6 @@ class BondiaGui:
         )
 
         def toggle_ringmap(event):
-            logger.info(f"Toggling {ringmap.name_} ({ringmap.id}): {event.new} {event}")
             if event.new:
                 self._plot[ringmap.id].panel_row = True
                 self._toggle_plot[ringmap.id].button_type = "success"
