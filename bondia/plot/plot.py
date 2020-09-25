@@ -1,12 +1,12 @@
-from panel import Column, Row, Param
+from panel import Row, Param
 
 
 class BondiaPlot:
     def __init__(self, name: str, activated: bool = True):
         self._name = name
         self._id = name.lower().replace(" ", "_")
-        self._panel_col_active = activated
-        self._panel_col = None
+        self._panel_row_active = activated
+        self._panel_row = None
 
     @property
     def id(self):
@@ -24,36 +24,28 @@ class BondiaPlot:
     def param_control(self):
         return Param(
             self.param,
+            # Stop param from showing the expand button of the datashading function
+            # selector. It would be nice to show it, but there are options that can make
+            # the whole server crash.
             expand_button=False,
         )
 
     @property
     def panel_row(self):
-        if self._panel_col is None:
-            if self._panel_col_active:
-
-                self._panel_col = Column(
-                    self.title,
-                    # Stop param from showing the expand button of the datashading function
-                    # selector. It would be nice to show it, but there are options that can make
-                    # the whole server crash.
-                    # Also manually set the widget type for the ringmap param 'flags'.
-                    Row(self.view, self.param_control),
-                    width_policy="max",
-                )
+        if self._panel_row is None:
+            if self._panel_row_active:
+                self._panel_row = Row(self.view, self.param_control)
             else:
-                self._panel_col = Column(None, Row())
-        return self._panel_col
+                self._panel_row = Row()
+        return self._panel_row
 
     @panel_row.setter
     def panel_row(self, value: bool):
-        self._panel_col_active = value
-        if self._panel_col:
+        self._panel_row_active = value
+        if self._panel_row:
             if value:
-                self._panel_col[0] = self.title
-                self._panel_col[1][0] = self.view
-                self._panel_col[1][1] = self.param_control
+                self._panel_row[0] = self.view
+                self._panel_row[1] = self.param_control
             else:
-                self._panel_col[0] = None
-                self._panel_col[1][0] = None
-                self._panel_col[1][1] = None
+                self._panel_row[0] = None
+                self._panel_row[1] = None
