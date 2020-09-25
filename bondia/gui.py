@@ -107,6 +107,7 @@ class BondiaGui:
             t.param.trigger("value")
         components.append((f"toggle_{delay.id}", self._toggle_plot[delay.id]))
         components.append((f"plot_{delay.id}", delay.panel_row))
+        template.add_variable("title_delay_spectrum", delay.name_)
 
         self._toggle_plot[ringmap.id] = pn.widgets.Toggle(
             name=f"Deactivate {ringmap.name_}",
@@ -131,6 +132,7 @@ class BondiaGui:
             t.param.trigger("value")
         components.append((f"toggle_{ringmap.id}", self._toggle_plot[ringmap.id]))
         components.append((f"plot_{ringmap.id}", ringmap.panel_row))
+        template.add_variable("title_ringmap", ringmap.name_)
 
         for name, c in components:
             template.add_panel(name, c)
