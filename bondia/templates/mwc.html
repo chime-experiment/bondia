@@ -12,6 +12,11 @@
 <link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
 <link href="https://use.fontawesome.com/releases/v5.11.2/css/all.css" rel="stylesheet" type="text/css">
 
+<!-- List unused components here -->
+<div style="display: none;">
+{{ embed(roots.data_description1) }}{{ embed(roots.data_description2) }}
+</div>
+
 <style>
 body {
     font-family: roboto;
@@ -68,7 +73,7 @@ mwc-drawer {
             <mwc-icon-button icon="perm_identity" slot="actionItems" label="Login"></mwc-icon-button>
         </mwc-top-app-bar-fixed>
         <div class="appMain">
-            {{ embed(roots.data_description) }}
+            <h1>{{ embed(roots.data_description) }}</h1>
             <h2>{{ title_delay_spectrum }}</h2>
             {{ embed(roots.plot_delay_spectrum) }}
             <h2>{{ title_ringmap }}</h2>
