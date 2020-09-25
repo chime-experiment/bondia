@@ -27,7 +27,7 @@ setuptools.setup(
     url="http://github.com/chime-experiment/bondia",
     install_requires=requires,
     package_data={
-        "bondia.templates": ["material.html", "mwc.html"],
+        "bondia.templates": ["material.html", "mwc.html", "mdl.html"],
         "bondia": ["login.html"],
     },
 )

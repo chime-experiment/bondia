@@ -64,11 +64,11 @@ class BondiaGui:
 
         # Add a title over the plots showing the selected day and rev (and keep it updated)
         data_description = pn.pane.Markdown(
-            f"<h1>LSD {day_selector.value} - {rev_selector.value}</h1>", width=600
+            f"<h4>LSD {day_selector.value} - {rev_selector.value}</h4>", width=800
         )
 
         def update_data_description_day(data_description, event):
-            data_description.object = f"<h1>LSD {event.new} - {rev_selector.value}</h1>"
+            data_description.object = f"<h4>LSD {event.new} - {rev_selector.value}</h4>"
 
         # It's enough to link the day selector to the description, since the revision selector
         # already is linked to the day selector in update_days.
@@ -79,6 +79,8 @@ class BondiaGui:
         # Fill the template with components
         components = [
             ("data_description", data_description),
+            ("data_description1", data_description),
+            ("data_description2", data_description),
             ("day_selector", day_selector),
             ("rev_selector", rev_selector),
         ]
