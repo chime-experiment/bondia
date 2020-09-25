@@ -30,18 +30,6 @@ class BondiaServer(Reader):
         # hv.renderer("bokeh").theme = Theme(json={})  # Reset Theme
         pn.extension()
 
-        try:
-            env = Environment(loader=PackageLoader("bondia"))
-        except ModuleNotFoundError:
-            raise EnvironmentError(
-                "Unable to find 'bondia' package ressources: templates."
-            )
-
-        try:
-            self._template = env.get_template(f"{self._template_name}.html")
-        except TemplateNotFound:
-            raise ConfigError(f"Can't find template '{self._template_name}'.")
-
     def _finalise_config(self):
         # Apply logging config
         logging.basicConfig(level=getattr(logging, self.logging.get("root", "WARNING")))
@@ -49,6 +37,17 @@ class BondiaServer(Reader):
             if module != "root":
                 logging.getLogger(module).setLevel(getattr(logging, level))
         logger.debug(f"Applied logging config: {self.logging}")
+
+        try:
+            env = Environment(loader=PackageLoader("bondia"))
+        except ModuleNotFoundError:
+            raise EnvironmentError(
+                "Unable to find 'bondia' package ressources: templates."
+            )
+        try:
+            self._template = env.get_template(f"{self._template_name}.html")
+        except TemplateNotFound:
+            raise ConfigError(f"Can't find template '{self._template_name}'.")
 
         self.data = DataLoader.from_config(self._config_data)
         if not self.data.index:
