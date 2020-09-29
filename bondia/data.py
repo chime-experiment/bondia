@@ -151,9 +151,11 @@ class DataLoader(Reader):
 
     def load_file(self, revision: str, day: Day, file_type: str):
         """Load the data of one day from disk."""
-        if isinstance(
-            getattr(self._index[revision][day], file_type), CONTAINER_TYPES[file_type]
-        ):
+        try:
+            f = getattr(self._index[revision][day], file_type)
+        except AttributeError:
+            raise DataError(f"{file_type} for day {day}, {revision} not available.")
+        if isinstance(f, CONTAINER_TYPES[file_type]):
             return getattr(self._index[revision][day], file_type)
         logger.debug(f"Loading {file_type} file for {revision}, {day}...")
         path = getattr(self._index[revision][day], file_type)
@@ -169,8 +171,6 @@ class DataLoader(Reader):
 
 class LSD:
     def __init__(self, path: os.PathLike, rev: str, day: Day):
-        self.delayspectrum = None
-        self.ringmap = None
         self._day = day
 
         for file_type, file_type_glob in FILE_TYPES.items():
