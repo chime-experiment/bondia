@@ -38,6 +38,7 @@
         <div align="center"><h4>Select Plots</h4></div>
         <div>{{ embed(roots.toggle_delay_spectrum) }}</div>
         <div>{{ embed(roots.toggle_ringmap) }}</div>
+        <div>{{ embed(roots.toggle_sensitivity) }}</div>
         <hr>
         <div align="center"><h4>Decision</h4></div>
         <button class="mdl-button mdl-js-button mdl-button--raised" disabled>
@@ -58,6 +59,8 @@
       {{ embed(roots.plot_delay_spectrum) }}
       <h4>{{ title_ringmap }}</h4>
       {{ embed(roots.plot_ringmap) }}
+      <h4>{{ title_sensitivity }}</h4>
+      {{ embed(roots.plot_sensitivity) }}
     </div>
 
     <!-- List unused components here -->

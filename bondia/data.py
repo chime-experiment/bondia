@@ -23,10 +23,14 @@ logger = logging.getLogger(__name__)
 FILE_TYPES = {
     "delayspectrum": "delayspectrum_lsd_*.h5",
     "ringmap": "ringmap_validation_freqs_lsd_*.h5",
+    "sensitivity": "sensitivity_lsd_*.h5",
+    "rfi": "rfi_mask_lsd_*.h5",
 }
 CONTAINER_TYPES: Dict[str, Type[Union[DelaySpectrum, RingMap]]] = {
     "delayspectrum": containers.DelaySpectrum,
     "ringmap": ccontainers.RingMap,
+    "sensitivity": containers.SystemSensitivity,
+    "rfi": containers.RFIMask,
 }
 
 
