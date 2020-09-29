@@ -38,6 +38,7 @@
         <div align="center"><h4>Select Plots</h4></div>
         <div>{{ embed(roots.toggle_delay_spectrum) }}</div>
         <div>{{ embed(roots.toggle_ringmap) }}</div>
+        <div>{{ embed(roots.toggle_sensitivity) }}</div>
         <hr>
         <div align="center"><h4>Decision</h4></div>
         <button class="mdl-button mdl-js-button mdl-button--raised" disabled>
@@ -66,7 +67,7 @@
     <section class="mdl-layout__tab-panel" id="sensitivity">
       <div class="page-content">
           {{ embed(roots.data_description2) }}
-          <p>Nothing here yet...</p>
+          {{ embed(roots.plot_sensitivity) }}
       </div>
     </section>
   </main>

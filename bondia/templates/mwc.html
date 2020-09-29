@@ -60,6 +60,7 @@ mwc-drawer {
         <div align="center"><p><h4>Select Plots</h4></p></div>
         <div>{{ embed(roots.toggle_delay_spectrum) }}</div>
         <div>{{ embed(roots.toggle_ringmap) }}</div>
+        <div>{{ embed(roots.toggle_sensitivity) }}</div>
         <hr>
         <div align="center"><p><h4>Decision</h4></p></div>
         <mwc-button disabled raised="" label="Mark day as good" align="left"></mwc-button><br><br>
@@ -78,6 +79,8 @@ mwc-drawer {
             {{ embed(roots.plot_delay_spectrum) }}
             <h2>{{ title_ringmap }}</h2>
             {{ embed(roots.plot_ringmap) }}
+            <h2>{{ title_sensitivity }}</h2>
+            {{ embed(roots.plot_sensitivity) }}
         </div>
     </div>
 </mwc-drawer>
