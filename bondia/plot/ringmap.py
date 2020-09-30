@@ -259,14 +259,24 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
                 flag_mask[(csd_arr > u2l(ca)) & (csd_arr < u2l(cb))] = True
             flag_mask = flag_mask[:, np.newaxis]
             rmap = np.where(flag_mask, np.nan, rmap)
+        logger.info(f"rmap after flag mask: {rmap.shape}")
 
         if self.weight_mask:
-            rms = np.squeeze(container.rms[sel_pol, sel_freq])
-            if self.polarization == self.mean_pol_text:
-                rms = np.nanmean(rms, axis=0)
-            weight_mask = tools.invert_no_zero(rms) < self.weight_mask_threshold
-            weight_mask = weight_mask[:, np.newaxis]
-            rmap = np.where(weight_mask, np.nan, rmap)
+            try:
+                rms = np.squeeze(container.rms[sel_pol, sel_freq])
+            except IndexError as err:
+                logger.error(
+                    f"rms dataset of ringmap file for rev {self.revision} lsd "
+                    f"{self.lsd} is missing [{sel_pol}, {sel_freq}] (polarization, "
+                    f"frequency). rms has shape {container.rms.shape}"
+                )
+                self.weight_mask = False
+            else:
+                if self.polarization == self.mean_pol_text:
+                    rms = np.nanmean(rms, axis=0)
+                weight_mask = tools.invert_no_zero(rms) < self.weight_mask_threshold
+                weight_mask = weight_mask[:, np.newaxis]
+                rmap = np.where(weight_mask, np.nan, rmap)
 
         if self.template_subtraction:
             rm_stack = ccontainers.RingMap.from_file(
