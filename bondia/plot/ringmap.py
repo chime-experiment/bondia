@@ -142,25 +142,35 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
             rm = self.data.load_file(self.revision, self.lsd, "ringmap")
         except DataError as err:
             logger.error(f"Unable to get available frequencies from file: {err}")
+            # Anyways make sure watchers are triggered
+            self.param.trigger("frequency")
             return
         self.param["frequency"].objects = [f[0] for f in rm.index_map["freq"]]
         self.frequency = rm.index_map["freq"][0][0]
+        # Trigger watchers also if value didn't change
+        self.param.trigger("frequency")
 
-    @param.depends("lsd", watch=True)
+    @param.depends("frequency", watch=True)
     def update_beam(self):
         try:
             rm = self.data.load_file(self.revision, self.lsd, "ringmap")
         except DataError as err:
             logger.error(f"Unable to get available beams from file: {err}")
+            # Anyways make sure watchers are triggered
+            self.param.trigger("beam")
             return
         self.param["beam"].objects, self.beam = self.make_selection(rm, "beam")
+        # Trigger watchers also if value didn't change
+        self.param.trigger("beam")
 
-    @param.depends("lsd", watch=True)
+    @param.depends("beam", watch=True)
     def update_pol(self):
         try:
             rm = self.data.load_file(self.revision, self.lsd, "ringmap")
         except DataError as err:
             logger.error(f"Unable to get available polarisations from file: {err}")
+            # Anyways make sure watchers are triggered
+            self.param.trigger("polarisation")
             return
         objects, value = self.make_selection(rm, "pol")
         if "XX" in objects and "YY" in objects:
@@ -168,6 +178,8 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
             value = self.mean_pol_text
         self.param["polarization"].objects = objects
         self.polarization = value
+        # Trigger watchers also if value didn't change
+        self.param.trigger("polarization")
 
     @param.depends("weight_mask", watch=True)
     def update_weight_threshold_selection(self):
@@ -185,14 +197,11 @@ class RingMapPlot(param.Parameterized, BondiaPlot, Reader):
         return panel.Column(p)
 
     @param.depends(
-        "lsd",
         "transpose",
         "logarithmic_colorscale",
         "serverside_rendering",
         "colormap_range",
-        "beam",
         "polarization",
-        "frequency",
         "mark_day_time",
         "mark_moon",
         "crosstalk_removal",
