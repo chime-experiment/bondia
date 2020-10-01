@@ -5,14 +5,13 @@ import numpy as np
 import panel
 import param
 
-from holoviews.operation.datashader import datashade, rasterize
 from holoviews.plotting.util import process_cmap
 from matplotlib import cm as matplotlib_cm
 
 from caput.config import Reader, Property
 from ch_util import ephemeris
 
-from .plot import BondiaPlot
+from .heatmap import HeatMapPlot
 
 # TODO: the ephemeris module will get moved to caput soon
 from ..util.ephemeris import source_rise_set
@@ -22,22 +21,12 @@ from ..util.plotting import hv_image_with_gaps
 logger = logging.getLogger(__name__)
 
 
-class SensitivityPlot(param.Parameterized, BondiaPlot, Reader):
+class SensitivityPlot(HeatMapPlot, Reader):
     """
     Attributes
     ----------
     lsd : int
         Local stellar day.
-    transpose
-        Transpose the plot if True. Default `True`.
-    log
-        True for logarithmic color map (z-values). Default `False`.
-    colormap_range
-        (optional, if using datashader) Select limits of color map values (z-values). Default
-        `None`.
-    serverside_rendering
-        True to use datashader. Automatically selects colormap for every zoom level, sends
-        pre-rendered images to client. Default `True`.
     """
 
     # Display text for polarization option: mean of XX and YY
@@ -55,14 +44,6 @@ class SensitivityPlot(param.Parameterized, BondiaPlot, Reader):
     _cache_flags = Property(proptype=bool, key="cache_flags", default=False)
 
     # parameters
-    transpose = param.Boolean(default=False)
-    logarithmic_colorscale = param.Boolean(default=True)
-    # Default: turn on datashader and disable colormap range
-    serverside_rendering = param.Selector(
-        objects=[None, rasterize, datashade], default=rasterize
-    )
-    colormap_range = param.Range(default=zlim, constant=False)
-
     # Hide lsd, revision selectors by setting precedence < 0
     lsd = param.Selector(precedence=-1)
     revision = param.Selector(precedence=-1)
@@ -76,19 +57,9 @@ class SensitivityPlot(param.Parameterized, BondiaPlot, Reader):
         self.selections = None
         self._chime_obs = ephemeris.chime_observer()
 
-        BondiaPlot.__init__(self, "Sensitivity")
-        param.Parameterized.__init__(self, **params)
+        HeatMapPlot.__init__(self, "Sensitivity", activated=True, **params)
         self.read_config(config)
-
-    @param.depends("serverside_rendering", watch=True)
-    def update_serverside_rendering(self):
-        # Disable colormap range selection if using datashader (because it uses auto values)
-        self.param["colormap_range"].constant = self.serverside_rendering == datashade
-
-    def make_selection(self, data, key):
-        objects = list(data.index_map[key])
-        default = data.index_map[key][0]
-        return objects, default
+        self.logarithmic_colorscale = True
 
     @param.depends("lsd", watch=True)
     def update_pol(self):
