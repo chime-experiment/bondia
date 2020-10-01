@@ -131,7 +131,13 @@ class DataLoader(Reader):
                 lsd_dirs = sorted(glob.glob(os.path.join(rev_dir, "*")))
 
                 for lsd_dir in lsd_dirs:
-                    day = Day.from_lsd(int(os.path.basename(lsd_dir)))
+                    try:
+                        lsd = int(os.path.basename(lsd_dir))
+                    except ValueError as err:
+                        logger.debug(
+                            f"Skipping dir '{lsd_dir}'. It doesn't seem to be an lsd dir: {err}"
+                        )
+                    day = Day.from_lsd(lsd)
                     if rev not in self._index:
                         self._index[rev] = {}
                     if day.lsd not in self.lsds(rev):
