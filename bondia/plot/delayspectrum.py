@@ -5,44 +5,28 @@ import panel
 import param
 import numpy as np
 
-from holoviews.operation.datashader import datashade, rasterize
 from holoviews.plotting.util import process_cmap
 from matplotlib import cm as matplotlib_cm
 
-from .plot import BondiaPlot
+from .heatmap import HeatMapPlot
 from ..util.exception import DataError
 
 logger = logging.getLogger(__name__)
 
 
-class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
+class DelaySpectrumPlot(HeatMapPlot):
     """
     Attributes
     ----------
     lsd : int
         Local stellar day.
-    transpose
-        Transpose the plot if True. Default `False`.
-    log
-        True for logarithmic color map (z-values). Default `True`.
-    colormap_range
-        (optional, if using datashader) Select limits of color map values (z-values). Default
-        `None`.
-    serverside_rendering
-        True to use datashader. Automatically selects colormap for every zoom level, sends
-        pre-rendered images to client. Default `True`.
     """
 
-    # parameters
-    transpose = param.Boolean(default=False)
-    logarithmic_colorscale = param.Boolean(default=True)
-    helper_lines = param.Boolean(default=True)
+    # default value for colormap range
+    zlim = (0.1, 10000)
 
-    # Default: turn on datashader and disable colormap range
-    serverside_rendering = param.Selector(
-        objects=[None, rasterize, datashade], default=rasterize
-    )
-    colormap_range = param.Range(default=(0.1, 10000), constant=False)
+    # parameters
+    helper_lines = param.Boolean(default=True)
 
     # Hide lsd, revision selectors by setting precedence < 0
     lsd = param.Selector(precedence=-1)
@@ -51,13 +35,8 @@ class DelaySpectrumPlot(param.Parameterized, BondiaPlot):
     def __init__(self, data, config, **params):
         self.data = data
         self.selections = None
-        BondiaPlot.__init__(self, "Delay Spectrum")
-        param.Parameterized.__init__(self, **params)
-
-    @param.depends("serverside_rendering", watch=True)
-    def update_serverside_rendering(self):
-        # Disable colormap range selection if using datashader (because it uses auto values)
-        self.param["colormap_range"].constant = self.serverside_rendering == datashade
+        HeatMapPlot.__init__(self, "Delay Spectrum", activated=True, **params)
+        self.logarithmic_colorscale = True
 
     @param.depends(
         "lsd",
