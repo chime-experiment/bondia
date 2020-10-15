@@ -165,6 +165,10 @@ class DataLoader(Reader):
             f = getattr(self._index[revision][day], file_type)
         except AttributeError:
             raise DataError(f"{file_type} for day {day}, {revision} not available.")
+        except KeyError as not_found:
+            raise DataError(
+                f"Couldn't find data for {not_found} when loading revision {revision}, day {day}"
+            )
         if isinstance(f, CONTAINER_TYPES[file_type]):
             return getattr(self._index[revision][day], file_type)
         logger.debug(f"Loading {file_type} file for {revision}, {day}...")
