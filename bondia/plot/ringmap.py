@@ -140,7 +140,7 @@ class RingMapPlot(HeatMapPlot, Reader):
         except DataError as err:
             logger.error(f"Unable to get available polarisations from file: {err}")
             # Anyways make sure watchers are triggered
-            self.param.trigger("polarisation")
+            self.param.trigger("polarization")
             return
         objects, value = self.make_selection(rm, "pol")
         if "XX" in objects and "YY" in objects:
