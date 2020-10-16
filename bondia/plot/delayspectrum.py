@@ -62,7 +62,7 @@ class DelaySpectrumPlot(HeatMapPlot):
         ux, uix = np.unique(np.round(x).astype(np.int), return_inverse=True)
 
         # Fill a column with plots (one per pair of cylinders)
-        all_img = panel.Row(width_policy="max")
+        imgs = {}
         mplot = {}
         ylim = None
         for pp, pux in reversed(list(enumerate(ux))):
@@ -124,7 +124,10 @@ class DelaySpectrumPlot(HeatMapPlot):
                 clim=self.colormap_range,
                 logz=self.logarithmic_colorscale,
                 cmap=process_cmap("inferno", provider="matplotlib"),
-                colorbar=True,
+                # Show colorbar only in rightmost plot (convert from numpy bool).
+                colorbar=bool(pux == ux[-1]),
+                # Show yaxis only in leftmost plot
+                yaxis="left" if pux == ux[0] else None,
                 title=f"x = {pux} m",
                 xlim=xlim,
                 ylim=ylim,
@@ -170,6 +173,9 @@ class DelaySpectrumPlot(HeatMapPlot):
                 shared_axes=False,
             )
 
-            all_img.insert(0, img)
+            imgs[pux] = img
 
+        imgs = hv.NdLayout(imgs, kdims="x [m]")
+        imgs.opts(merge_tools=True, shared_axes=False)
+        all_img = panel.Row(imgs, width_policy="max")
         return all_img
