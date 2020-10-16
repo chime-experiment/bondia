@@ -24,17 +24,11 @@ class BondiaGui:
         self._config_plots = config_plots
 
     def populate_template(self, template):
-        delay = DelaySpectrumPlot(
-            self._data, self._config_plots.get("delayspectrum", {})
-        )
-        ringmap = RingMapPlot(self._data, self._config_plots.get("ringmap", {}))
-        sensitivity = SensitivityPlot(
-            self._data, self._config_plots.get("sensitivity", {})
-        )
-
-        self._plot[delay.id] = delay
-        self._plot[ringmap.id] = ringmap
-        self._plot[sensitivity.id] = sensitivity
+        self._plot = {
+            DelaySpectrumPlot(self._data, self._config_plots.get("delayspectrum", {})),
+            RingMapPlot(self._data, self._config_plots.get("ringmap", {})),
+            SensitivityPlot(self._data, self._config_plots.get("sensitivity", {})),
+        }
 
         # Load revision, lsd selectors and set initial values
         rev_selector = pn.widgets.Select(
@@ -43,18 +37,12 @@ class BondiaGui:
             name="Select Data Revision",
             value=self._data.latest_revision,
         )
-        delay.revision = rev_selector.value
-        ringmap.revision = rev_selector.value
-        sensitivity.revision = rev_selector.value
         day_selector = pn.widgets.Select(
             options=list(self._data.days(rev_selector.value)),
             width=self._width_drawer_widgets,
             name="Select Sidereal Day",
             value=self._data.days(rev_selector.value)[-1],
         )
-        delay.lsd = day_selector.value
-        ringmap.lsd = day_selector.value
-        sensitivity.lsd = day_selector.value
 
         def update_days(day_selector, event):
             """Update days depending on selected revision."""
@@ -62,15 +50,6 @@ class BondiaGui:
             day_selector.options = list(self._data.days(event.new))
             new_selected_day = old_selected_day.closest_after(day_selector.options)
             day_selector.value = new_selected_day
-
-        # Link selected day, revision to plots
-        rev_selector.link(delay, value="revision")
-        rev_selector.link(ringmap, value="revision")
-        rev_selector.link(sensitivity, value="revision")
-        rev_selector.link(day_selector, callbacks={"value": update_days})
-        day_selector.link(delay, value="lsd")
-        day_selector.link(ringmap, value="lsd")
-        day_selector.link(sensitivity, value="lsd")
 
         # Add a title over the plots showing the selected day and rev (and keep it updated)
         data_description = pn.pane.Markdown(
@@ -87,96 +66,52 @@ class BondiaGui:
         )
 
         # Fill the template with components
-        components = [
-            ("data_description", data_description),
-            ("data_description1", data_description),
-            ("data_description2", data_description),
-            ("day_selector", day_selector),
-            ("rev_selector", rev_selector),
-        ]
+        template.add_panel("data_description", data_description)
+        template.add_panel("data_description1", data_description)
+        template.add_panel("data_description2", data_description)
+        template.add_panel("day_selector", day_selector)
+        template.add_panel("rev_selector", rev_selector)
 
-        # Fill in the plot selection toggle buttons
-        self._toggle_plot[delay.id] = pn.widgets.Toggle(
-            name=f"Deactivate {delay.name_}",
-            button_type="success",
-            value=True,
-            width=self._width_drawer_widgets,
-        )
+        for plot in self._plot:
+            plot.revision = rev_selector.value
+            plot.lsd = day_selector.value
 
-        def toggle_delay(event):
-            if event.new:
-                self._plot[delay.id].panel_row = True
-                self._toggle_plot[delay.id].button_type = "success"
-                self._toggle_plot[delay.id].name = f"Deactivate {delay.name_}"
-            else:
-                self._plot[delay.id].panel_row = False
-                self._toggle_plot[delay.id].button_type = "danger"
-                self._toggle_plot[delay.id].name = f"Activate {delay.name_}"
+            # Link selected day, revision to plots
+            rev_selector.link(plot, value="revision")
+            day_selector.link(plot, value="lsd")
 
-        self._toggle_plot[delay.id].param.watch(toggle_delay, "value")
-        self._toggle_plot[delay.id].param.trigger("value")
-        for t in self._toggle_plot.values():
-            t.param.trigger("value")
-        components.append((f"toggle_{delay.id}", self._toggle_plot[delay.id]))
-        components.append((f"plot_{delay.id}", delay.panel_row))
-        template.add_variable("title_delay_spectrum", delay.name_)
+            # Fill in the plot selection toggle buttons
+            self._toggle_plot[plot.id] = pn.widgets.Toggle(
+                name=f"Deactivate {plot.name_}",
+                button_type="success",
+                value=True,
+                width=self._width_drawer_widgets,
+            )
 
-        self._toggle_plot[ringmap.id] = pn.widgets.Toggle(
-            name=f"Deactivate {ringmap.name_}",
-            button_type="success",
-            value=True,
-            width=self._width_drawer_widgets,
-        )
+            def toggle_plot(event, toggle_plot):
+                if event.new:
+                    toggle_plot.panel_row = True
+                    self._toggle_plot[toggle_plot.id].button_type = "success"
+                    self._toggle_plot[
+                        toggle_plot.id
+                    ].name = f"Deactivate {toggle_plot.name_}"
+                else:
+                    toggle_plot.panel_row = False
+                    self._toggle_plot[toggle_plot.id].button_type = "danger"
+                    self._toggle_plot[
+                        toggle_plot.id
+                    ].name = f"Activate {toggle_plot.name_}"
 
-        def toggle_ringmap(event):
-            if event.new:
-                self._plot[ringmap.id].panel_row = True
-                self._toggle_plot[ringmap.id].button_type = "success"
-                self._toggle_plot[ringmap.id].name = f"Deactivate {ringmap.name_}"
-            else:
-                self._plot[ringmap.id].panel_row = False
-                self._toggle_plot[ringmap.id].button_type = "danger"
-                self._toggle_plot[ringmap.id].name = f"Activate {ringmap.name_}"
+            self._toggle_plot[plot.id].param.watch(
+                lambda event, tplot=plot: toggle_plot(event, tplot), "value"
+            )
+            self._toggle_plot[plot.id].param.trigger("value")
 
-        self._toggle_plot[ringmap.id].param.watch(toggle_ringmap, "value")
-        self._toggle_plot[ringmap.id].param.trigger("value")
-        for t in self._toggle_plot.values():
-            t.param.trigger("value")
-        components.append((f"toggle_{ringmap.id}", self._toggle_plot[ringmap.id]))
-        components.append((f"plot_{ringmap.id}", ringmap.panel_row))
-        template.add_variable("title_ringmap", ringmap.name_)
+            template.add_panel(f"toggle_{plot.id}", self._toggle_plot[plot.id])
+            template.add_panel(f"plot_{plot.id}", plot.panel_row)
+            template.add_variable(f"title_{plot.id}", plot.name_)
 
-        self._toggle_plot[sensitivity.id] = pn.widgets.Toggle(
-            name=f"Deactivate {sensitivity.name_}",
-            button_type="success",
-            value=True,
-            width=self._width_drawer_widgets,
-        )
-
-        def toggle_sensitivity(event):
-            if event.new:
-                self._plot[sensitivity.id].panel_row = True
-                self._toggle_plot[sensitivity.id].button_type = "success"
-                self._toggle_plot[
-                    sensitivity.id
-                ].name = f"Deactivate {sensitivity.name_}"
-            else:
-                self._plot[sensitivity.id].panel_row = False
-                self._toggle_plot[sensitivity.id].button_type = "danger"
-                self._toggle_plot[sensitivity.id].name = f"Activate {sensitivity.name_}"
-
-        self._toggle_plot[sensitivity.id].param.watch(toggle_sensitivity, "value")
-        self._toggle_plot[sensitivity.id].param.trigger("value")
-        for t in self._toggle_plot.values():
-            t.param.trigger("value")
-        components.append(
-            (f"toggle_{sensitivity.id}", self._toggle_plot[sensitivity.id])
-        )
-        components.append((f"plot_{sensitivity.id}", sensitivity.panel_row))
-        template.add_variable("title_sensitivity", sensitivity.name_)
-
-        for name, c in components:
-            template.add_panel(name, c)
+        rev_selector.link(day_selector, callbacks={"value": update_days})
         return template
 
     @property
