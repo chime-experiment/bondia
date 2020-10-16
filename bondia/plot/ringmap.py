@@ -229,7 +229,6 @@ class RingMapPlot(HeatMapPlot, Reader):
                 flag_mask[(csd_arr > u2l(ca)) & (csd_arr < u2l(cb))] = True
             flag_mask = flag_mask[:, np.newaxis]
             rmap = np.where(flag_mask, np.nan, rmap)
-        logger.info(f"rmap after flag mask: {rmap.shape}")
 
         if self.weight_mask:
             try:
