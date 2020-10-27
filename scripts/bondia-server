@@ -8,6 +8,8 @@ import pathlib
 import secrets
 import yaml
 
+from chimedb.core import test_enable as chimedb_test_enable, connect as chimedb_connect
+
 from bondia.server import BondiaServer
 from bondia import auth, __version__
 
@@ -50,7 +52,22 @@ logger = logging.getLogger("bondia-server")
     default=True,
     show_default=True,
 )
-def start(configfile, show, port, num_procs, websocket_origin, login, print_config):
+@click.option(
+    "--chimedb-enable-test/--co-chimedb-enable-test",
+    help="Use chimedb in test mode (make sure to not use production DB settings).",
+    default=False,
+    show_default=True,
+)
+def start(
+    configfile,
+    show,
+    port,
+    num_procs,
+    websocket_origin,
+    login,
+    print_config,
+    chimedb_enable_test,
+):
 
     logging.basicConfig(level=logging.INFO)
 
@@ -59,6 +76,10 @@ def start(configfile, show, port, num_procs, websocket_origin, login, print_conf
         config = yaml.safe_load(file)
     if print_config:
         logger.info(f"Loaded config: {config}")
+
+    if chimedb_enable_test:
+        chimedb_test_enable()
+    chimedb_connect(reconnect=True)
 
     if isinstance(websocket_origin, str):
         websocket_origin = [websocket_origin]

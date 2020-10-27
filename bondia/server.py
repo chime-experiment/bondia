@@ -5,16 +5,12 @@ from jinja2.exceptions import TemplateNotFound
 import logging
 import panel as pn
 
-from chimedb.core import connect as chimedbconnect
-
 from .data import DataLoader
 from .util.exception import ConfigError
 from .gui import BondiaGui
 
 logger = logging.getLogger(__name__)
-
-# Open DB connection
-chimedbconnect(reconnect=True)
+logging.basicConfig(level=logging.DEBUG)
 
 
 class BondiaServer(Reader):
@@ -54,7 +50,7 @@ class BondiaServer(Reader):
             raise ConfigError("No data available.")
 
     def gui_instance(self):
-        # logger.debug(f"Starting user session {pn.state.curdoc.session_context.id}.")
+        logger.debug("Starting user session.")
         instance = BondiaGui(
             self._template,
             self._width_drawer_widgets,

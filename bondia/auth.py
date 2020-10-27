@@ -1,4 +1,3 @@
-from chimedb.core import connect as connect_chimedb
 from chimedb.core.mediawiki import MediaWikiUser
 
 import os
@@ -37,7 +36,6 @@ class CustomLoginHandler(tornado.web.RequestHandler):
             self.redirect(os.getenv("BONDIA_ROOT_URL", "") + "/login" + error_msg)
             return
 
-        connect_chimedb()
         try:
             MediaWikiUser.authenticate(username, password)
         except UserWarning as err:
