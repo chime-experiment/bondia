@@ -62,10 +62,11 @@ mwc-drawer {
         <div>{{ embed(roots.toggle_ringmap) }}</div>
         <div>{{ embed(roots.toggle_sensitivity) }}</div>
         <hr>
-        <div align="center"><p><h4>Decision</h4></p></div>
-        <mwc-button disabled raised="" label="Mark day as good" align="left"></mwc-button><br><br>
-        <mwc-button disabled raised="" label="Mark day as bad" align="left"></mwc-button><br><br>
-        <mwc-button disabled raised="" label="I don't know" align="left"></mwc-button>
+        <div>{{ embed(roots.opinion_header) }}</div>
+        <div>{{ embed(roots.opinion_good) }}</div>
+        <div>{{ embed(roots.opinion_bad) }}</div>
+        <div>{{ embed(roots.opinion_unsure) }}</div>
+        <div>{{ embed(roots.opinion_warning) }}</div>
     </div>
     <div class="appContent" slot="appContent">
         <mwc-top-app-bar-fixed class="appBar">

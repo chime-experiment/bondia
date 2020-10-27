@@ -1,6 +1,8 @@
 import logging
 import panel as pn
 
+from chimedb.dataflag.orm import DataFlagOpinion
+
 from . import opinion
 from .plot.delayspectrum import DelaySpectrumPlot
 from .plot.ringmap import RingMapPlot
@@ -127,7 +129,7 @@ class BondiaGui:
             button_type="default",
             width=self._width_drawer_widgets,
         )
-        for decision in opinion.decision_options:
+        for decision in DataFlagOpinion.decision.enum_list:
             # Add functionality to opinion button
             self._opinion_buttons[decision].param.watch(
                 lambda event, d=decision: self._click_opinion(event, d), "clicks"
@@ -197,7 +199,7 @@ class BondiaGui:
         return template
 
     def _click_opinion(self, event, decision):
-        opinion.set(
+        opinion.insert(
             self.current_user,
             self.day_selector.value,
             self.rev_selector.value,
