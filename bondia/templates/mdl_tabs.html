@@ -37,8 +37,8 @@
         <hr>
         <div align="center"><h4>Select Plots</h4></div>
         <div>{{ embed(roots.toggle_delay_spectrum) }}</div>
-        <div>{{ embed(roots.toggle_ringmap) }}</div>
         <div>{{ embed(roots.toggle_sensitivity) }}</div>
+        <div>{{ embed(roots.toggle_ringmap) }}</div>
         <hr>
         <div>{{ embed(roots.opinion_header) }}</div>
         <div>{{ embed(roots.opinion_good) }}</div>
@@ -53,16 +53,16 @@
           {{ embed(roots.plot_delay_spectrum) }}
       </div>
     </section>
-    <section class="mdl-layout__tab-panel" id="ringmap">
-      <div class="page-content">
-          {{ embed(roots.data_description1) }}
-          {{ embed(roots.plot_ringmap) }}
-      </div>
-    </section>
     <section class="mdl-layout__tab-panel" id="sensitivity">
       <div class="page-content">
           {{ embed(roots.data_description2) }}
           {{ embed(roots.plot_sensitivity) }}
+      </div>
+    </section>
+    <section class="mdl-layout__tab-panel" id="ringmap">
+      <div class="page-content">
+          {{ embed(roots.data_description1) }}
+          {{ embed(roots.plot_ringmap) }}
       </div>
     </section>
   </main>

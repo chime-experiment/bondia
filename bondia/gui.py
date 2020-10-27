@@ -65,8 +65,8 @@ class BondiaGui:
     def populate_template(self, template):
         self._plot = {
             DelaySpectrumPlot(self._data, self._config_plots.get("delayspectrum", {})),
-            RingMapPlot(self._data, self._config_plots.get("ringmap", {})),
             SensitivityPlot(self._data, self._config_plots.get("sensitivity", {})),
+            RingMapPlot(self._data, self._config_plots.get("ringmap", {})),
         }
 
         # Load revision, lsd selectors and set initial values
