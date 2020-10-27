@@ -1,8 +1,6 @@
 import logging
 import param
 
-from holoviews.operation.datashader import datashade, rasterize
-
 from .plot import BondiaPlot
 
 
@@ -30,9 +28,7 @@ class HeatMapPlot(BondiaPlot, param.Parameterized):
     # parameters
     transpose = param.Boolean(default=True)
     logarithmic_colorscale = param.Boolean(default=False)
-    serverside_rendering = param.Selector(
-        objects=[None, rasterize, datashade], default=rasterize
-    )
+    serverside_rendering = param.Selector()
     colormap_range = param.Range(constant=False)
 
     def __init__(self, name: str, activated: bool = True, **params):
@@ -40,8 +36,19 @@ class HeatMapPlot(BondiaPlot, param.Parameterized):
         param.Parameterized.__init__(self, **params)
         self.colormap_range = self.zlim if hasattr(self, "zlim") else (-5, 5)
 
+        # TODO: for some reason this has to be done before panel.serve
+        # See https://discourse.holoviz.org/t/panel-serve-with-num-procs-breaks-if-importing-datashade/1353
+        from holoviews.operation.datashader import datashade, rasterize
+
+        self.param["serverside_rendering"].objects = [None, rasterize, datashade]
+        self.param["serverside_rendering"].default = rasterize
+
     @param.depends("serverside_rendering", watch=True)
     def update_serverside_rendering(self):
+        # TODO: for some reason this has to be done before panel.serve
+        # See https://discourse.holoviz.org/t/panel-serve-with-num-procs-breaks-if-importing-datashade/1353
+        from holoviews.operation.datashader import datashade
+
         # Disable colormap range selection if using datashader (because it uses auto values)
         self.param["colormap_range"].constant = self.serverside_rendering == datashade
 
