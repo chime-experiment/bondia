@@ -1,8 +1,7 @@
 import logging
 import panel as pn
 
-from tornado.web import decode_signed_value
-
+from . import opinion
 from .plot.delayspectrum import DelaySpectrumPlot
 from .plot.ringmap import RingMapPlot
 from .plot.sensitivity import SensitivityPlot
@@ -12,16 +11,54 @@ logger = logging.getLogger(__name__)
 
 
 class BondiaGui:
-    def __init__(
-        self, template, width_drawer_widgets, data_loader, config_plots, cookie_secret
-    ):
+    def __init__(self, template, width_drawer_widgets, data_loader, config_plots):
         self._width_drawer_widgets = width_drawer_widgets
         self._template = template
         self._plot = {}
         self._toggle_plot = {}
+        self._opinion_buttons = {}
         self._data = data_loader
-        self.cookie_secret = cookie_secret
         self._config_plots = config_plots
+        self._opinion_header = pn.pane.Markdown(
+            "####Opinion", width=width_drawer_widgets
+        )
+        self._opinion_warning = pn.pane.Markdown(
+            "You didn't give your opinion yet.", width=width_drawer_widgets
+        )
+
+    def _choose_lsd(self):
+        days = self._data.days(self.rev_selector.value)
+        for day in reversed(days):
+            if opinion.get(day, self.rev_selector.value, self.current_user) is None:
+                return day
+        logger.debug(
+            f"User already gave opinions to all available days, choosing latest day: {days[-1]}"
+        )
+
+        # If day doesn't change, the opinion UI is not updated. So we do it here...
+        if hasattr(self, "day_selector"):
+            self.day_selector.param.trigger("value")
+
+        return days[-1]
+
+    def _update_opinion_warning(self, target, event):
+        if self.current_user is None:
+            self._opinion_warning.object = """
+            Log in to give your opinion
+            """
+        elif opinion.get(event.new, self.rev_selector.value, self.current_user):
+            self._opinion_warning.object = """
+            **You already voted on the data quality of this day.** Choose a different option to change your decision.
+            """
+        else:
+            self._opinion_warning.object = "You didn't give your opinion yet."
+
+    def _update_opinion_button(self, lsd, button):
+        self._opinion_buttons[
+            button
+        ].disabled = self.current_user is None or button == opinion.get(
+            lsd, self.rev_selector.value, self.current_user
+        )
 
     def populate_template(self, template):
         self._plot = {
@@ -31,37 +68,37 @@ class BondiaGui:
         }
 
         # Load revision, lsd selectors and set initial values
-        rev_selector = pn.widgets.Select(
+        self.rev_selector = pn.widgets.Select(
             options=list(self._data.revisions),
             width=self._width_drawer_widgets,
             name="Select Data Revision",
             value=self._data.latest_revision,
         )
-        day_selector = pn.widgets.Select(
-            options=list(self._data.days(rev_selector.value)),
+        self.day_selector = pn.widgets.Select(
+            options=list(self._data.days(self.rev_selector.value)),
             width=self._width_drawer_widgets,
             name="Select Sidereal Day",
-            value=self._data.days(rev_selector.value)[-1],
+            value=self._choose_lsd(),
         )
 
         def update_days(day_selector, event):
             """Update days depending on selected revision."""
-            old_selected_day = day_selector.value
-            day_selector.options = list(self._data.days(event.new))
-            new_selected_day = old_selected_day.closest_after(day_selector.options)
-            day_selector.value = new_selected_day
+            day_selector.value = self._choose_lsd()
 
         # Add a title over the plots showing the selected day and rev (and keep it updated)
         data_description = pn.pane.Markdown(
-            f"<h4>LSD {day_selector.value} - {rev_selector.value}</h4>", width=800
+            f"<h4>LSD {self.day_selector.value} - {self.rev_selector.value}</h4>",
+            width=800,
         )
 
         def update_data_description_day(data_description, event):
-            data_description.object = f"<h4>LSD {event.new} - {rev_selector.value}</h4>"
+            data_description.object = (
+                f"<h4>LSD {event.new} - {self.rev_selector.value}</h4>"
+            )
 
         # It's enough to link the day selector to the description, since the revision selector
         # already is linked to the day selector in update_days.
-        day_selector.link(
+        self.day_selector.link(
             data_description, callbacks={"value": update_data_description_day}
         )
 
@@ -69,16 +106,61 @@ class BondiaGui:
         template.add_panel("data_description", data_description)
         template.add_panel("data_description1", data_description)
         template.add_panel("data_description2", data_description)
-        template.add_panel("day_selector", day_selector)
-        template.add_panel("rev_selector", rev_selector)
+        template.add_panel("day_selector", self.day_selector)
+        template.add_panel("rev_selector", self.rev_selector)
+
+        # Opinion buttons
+        template.add_panel("opinion_header", self._opinion_header)
+        template.add_panel("opinion_warning", self._opinion_warning)
+        self._opinion_buttons["good"] = pn.widgets.Button(
+            name="Mark day as good",
+            button_type="success",
+            width=self._width_drawer_widgets,
+        )
+        self._opinion_buttons["bad"] = pn.widgets.Button(
+            name="Mark day as bad",
+            button_type="danger",
+            width=self._width_drawer_widgets,
+        )
+        self._opinion_buttons["unsure"] = pn.widgets.Button(
+            name="I don't know",
+            button_type="default",
+            width=self._width_drawer_widgets,
+        )
+        for decision in opinion.decision_options:
+            # Add functionality to opinion button
+            self._opinion_buttons[decision].param.watch(
+                lambda event, d=decision: self._click_opinion(event, d), "clicks"
+            )
+
+            # Add button to the template
+            template.add_panel(f"opinion_{decision}", self._opinion_buttons[decision])
+
+            # Update buttons when opinion given
+            self.day_selector.link(
+                self._opinion_buttons[decision],
+                callbacks={
+                    "value": lambda target, event, d=decision: self._update_opinion_button(
+                        event.new, d
+                    )
+                },
+            )
+
+        # Update opinion warning and buttons when LSD is changed
+        self.day_selector.link(
+            self._opinion_warning, callbacks={"value": self._update_opinion_warning}
+        )
+
+        # Trigger opinion UI callbacks once now
+        self.day_selector.param.trigger("value")
 
         for plot in self._plot:
-            plot.revision = rev_selector.value
-            plot.lsd = day_selector.value
+            plot.revision = self.rev_selector.value
+            plot.lsd = self.day_selector.value
 
             # Link selected day, revision to plots
-            rev_selector.link(plot, value="revision")
-            day_selector.link(plot, value="lsd")
+            self.rev_selector.link(plot, value="revision")
+            self.day_selector.link(plot, value="lsd")
 
             # Fill in the plot selection toggle buttons
             self._toggle_plot[plot.id] = pn.widgets.Toggle(
@@ -111,35 +193,21 @@ class BondiaGui:
             template.add_panel(f"plot_{plot.id}", plot.panel_row)
             template.add_variable(f"title_{plot.id}", plot.name_)
 
-        rev_selector.link(day_selector, callbacks={"value": update_days})
+        self.rev_selector.link(self.day_selector, callbacks={"value": update_days})
         return template
+
+    def _click_opinion(self, event, decision):
+        opinion.set(
+            self.current_user,
+            self.day_selector.value,
+            self.rev_selector.value,
+            decision,
+        )
+        self.day_selector.value = self._choose_lsd()
 
     @property
     def current_user(self):
-        if self.cookie_secret is None:
-            return "-"
-        # Try to find cookies. I think this will start working in panel==0.10.
-        # TODO: clean up when it works
-        secure_cookie = None
-        try:
-            secure_cookie = pn.state.curdoc.session_context.request.cookies["user"]
-        except AttributeError as err:
-            logger.error(err)
-            try:
-                secure_cookie = pn.state.cookies["user"]
-            except AttributeError as err:
-                logger.error(err)
-                return "FAILURE"
-            except KeyError:
-                logger.warning("User cookie not found.")
-                return "-"
-        except KeyError:
-            logger.warning("User cookie not found.")
-            return "-"
-        user = decode_signed_value(self.cookie_secret, "user", secure_cookie).decode(
-            "utf-8"
-        )
-        return user
+        return pn.state.user
 
     def render(self):
         template = pn.Template(self._template)

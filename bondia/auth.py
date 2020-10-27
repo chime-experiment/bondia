@@ -6,10 +6,7 @@ import tornado
 
 
 def get_user(request_handler):
-    user = request_handler.get_secure_cookie("user")
-    if user is not None and isinstance(user, (str, bytes, bytearray)):
-        user = tornado.escape.json_decode(user)
-    return user
+    return request_handler.get_secure_cookie("user")
 
 
 root_url = os.getenv("BONDIA_ROOT_URL", "")
@@ -52,14 +49,12 @@ class CustomLoginHandler(tornado.web.RequestHandler):
 
     def set_current_user(self, user):
         if user:
-            self.set_secure_cookie("user", tornado.escape.json_encode(user))
+            self.set_secure_cookie("user", user)
         else:
             self.clear_cookie("user")
 
     def get_user(self):
         user = self.get_secure_cookie("user")
-        if user is not None and isinstance(user, (str, bytes, bytearray)):
-            user = tornado.escape.json_decode(user)
         return user
 
 
