@@ -40,16 +40,11 @@
         <div>{{ embed(roots.toggle_ringmap) }}</div>
         <div>{{ embed(roots.toggle_sensitivity) }}</div>
         <hr>
-        <div align="center"><h4>Decision</h4></div>
-        <button class="mdl-button mdl-js-button mdl-button--raised" disabled>
-            Mark day as good
-        </button>
-        <button class="mdl-button mdl-js-button mdl-button--raised" disabled>
-            Mark day as bad
-        </button>
-        <button class="mdl-button mdl-js-button mdl-button--raised" disabled>
-            I don't know
-        </button>
+        <div>{{ embed(roots.opinion_header) }}</div>
+        <div>{{ embed(roots.opinion_good) }}</div>
+        <div>{{ embed(roots.opinion_bad) }}</div>
+        <div>{{ embed(roots.opinion_unsure) }}</div>
+        <div>{{ embed(roots.opinion_warning) }}</div>
   </div>
   <main class="mdl-layout__content">
     <section class="mdl-layout__tab-panel is-active" id="delayspectrum">

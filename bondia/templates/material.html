@@ -34,18 +34,11 @@
         <hr>
         <div>{{ embed(roots.plot_selector) | indent(8) }}</div>
         <hr>
-        <div align="center"><p><h4>Decision</h4></p></div>
-        <div>
-            <button class="mdc-button--raised">
-              <span class="mdc-button__label">Mark day as bad</span>
-            </button>
-            <button class="mdc-button--raised">
-              <span class="mdc-button__label">Mark day as good</span>
-            </button>
-            <button class="mdc-button--raised">
-              <span class="mdc-button__label">I don't know</span>
-            </button>
-        </div>
+        <div>{{ embed(roots.opinion_header) }}</div>
+        <div>{{ embed(roots.opinion_good) }}</div>
+        <div>{{ embed(roots.opinion_bad) }}</div>
+        <div>{{ embed(roots.opinion_unsure) }}</div>
+        <div>{{ embed(roots.opinion_warning) }}</div>
     </div>
   </div>
 </aside>
