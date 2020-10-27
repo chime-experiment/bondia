@@ -59,8 +59,9 @@ mwc-drawer {
         <hr>
         <div align="center"><p><h4>Select Plots</h4></p></div>
         <div>{{ embed(roots.toggle_delay_spectrum) }}</div>
-        <div>{{ embed(roots.toggle_ringmap) }}</div>
         <div>{{ embed(roots.toggle_sensitivity) }}</div>
+        <div>{{ embed(roots.toggle_ringmap) }}</div>
+
         <hr>
         <div>{{ embed(roots.opinion_header) }}</div>
         <div>{{ embed(roots.opinion_good) }}</div>
@@ -78,10 +79,10 @@ mwc-drawer {
             <h1>{{ embed(roots.data_description) }}</h1>
             <h2>{{ title_delay_spectrum }}</h2>
             {{ embed(roots.plot_delay_spectrum) }}
-            <h2>{{ title_ringmap }}</h2>
-            {{ embed(roots.plot_ringmap) }}
             <h2>{{ title_sensitivity }}</h2>
             {{ embed(roots.plot_sensitivity) }}
+            <h2>{{ title_ringmap }}</h2>
+            {{ embed(roots.plot_ringmap) }}
         </div>
     </div>
 </mwc-drawer>
