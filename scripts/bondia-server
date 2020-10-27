@@ -80,16 +80,9 @@ def start(configfile, show, port, num_procs, websocket_origin, login, print_conf
         # the root URL.
         kwargs["extra_patterns"] = [(r"/login", auth.CustomLoginHandler)]
         kwargs["auth_provider"] = AuthModule(auth.__file__)
-    else:
-        cookie_secret = None
-
-    # Create an instance of the GUI for each user session. Pass cookie secret to application, so it
-    # can decode the user name cookie.
-    def instance():
-        return server.gui_instance(cookie_secret)
 
     panel.serve(
-        instance,
+        server.gui_instance,
         port=port,
         show=show,
         title="bondia | CHIME Daily Validation",
