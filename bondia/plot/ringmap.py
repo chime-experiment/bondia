@@ -267,6 +267,8 @@ class RingMapPlot(HeatMapPlot, Reader):
                 # FIXME: this is a hack. remove when rinmap stack file fixed.
                 rmap -= rm_stack.reshape(rm_stack.shape[0], -1, 2).mean(axis=-1)
 
+        # Set flagged data to nan
+        rmap = np.where(rmap == 0, np.nan, rmap)
         if self.crosstalk_removal:
             # The mean of an all-nan slice (masked?) is nan. We don't need a warning about that.
             with warnings.catch_warnings():
