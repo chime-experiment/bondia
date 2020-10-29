@@ -59,7 +59,7 @@ class RingMapPlot(HeatMapPlot, Reader):
     template_subtraction = param.Boolean(default=True)
     crosstalk_removal = param.Boolean(default=True)
     weight_mask = param.Boolean(default=True)
-    weight_mask_threshold = param.Number(default=40, bounds=(0, 100))
+    weight_mask_threshold = param.Number(default=10, bounds=(0, 100))
     flag_mask = param.Boolean(default=True)
     flags = param.ListSelector(
         objects=[
