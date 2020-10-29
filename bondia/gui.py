@@ -30,18 +30,15 @@ class BondiaGui:
 
     def _choose_lsd(self):
         days = self._data.days(self.rev_selector.value)
-        for day in reversed(days):
-            if opinion.get(day, self.rev_selector.value, self.current_user) is None:
-                return day
-        logger.debug(
-            f"User already gave opinions to all available days, choosing latest day: {days[-1]}"
+        day = opinion.get_day_without_opinion(
+            days, self.rev_selector.value, self.current_user
         )
 
         # If day doesn't change, the opinion UI is not updated. So we do it here...
-        if hasattr(self, "day_selector"):
+        if hasattr(self, "day_selector") and day == self.day_selector.value:
             self.day_selector.param.trigger("value")
 
-        return days[-1]
+        return day
 
     def _update_opinion_warning(self, target, event):
         if self.current_user is None:

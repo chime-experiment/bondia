@@ -29,8 +29,7 @@ def get(lsd, revision, user):
             .where(
                 MediaWikiUser.user_name == user,
                 DataRevision.name == revision,
-                DataFlagOpinion.start_time == lsd.start_time,
-                DataFlagOpinion.finish_time == lsd.end_time,
+                DataFlagOpinion.lsd == lsd.lsd,
             )
             .get()
             .decision
@@ -49,8 +48,7 @@ def insert(user, lsd, revision, decision):
             .where(
                 MediaWikiUser.user_name == user,
                 DataRevision.name == revision,
-                DataFlagOpinion.start_time == lsd.start_time,
-                DataFlagOpinion.finish_time == lsd.end_time,
+                DataFlagOpinion.lsd == lsd.lsd,
             )
             .get()
         )
@@ -69,8 +67,7 @@ def insert(user, lsd, revision, decision):
             opinion_type.name,
             __name__,
             __version__,
-            lsd.start_time,
-            lsd.end_time,
+            lsd.lsd,
             revision.name,
         )
     else:
@@ -81,3 +78,36 @@ def insert(user, lsd, revision, decision):
         )
         existing_decision.decision = decision
         existing_decision.save()
+
+
+def get_day_without_opinion(days, revision, user):
+    """
+    Find a day the user hasn't voted on.
+
+    Parameters
+    ----------
+    days : List[:class:`Day`]
+        Days to choose from. Has to be sorted from older to newer days.
+    revision : str
+        Revision name (e.g. `rev_01`).
+    user : str
+        User name.
+
+    Returns
+    -------
+    day : :class:`Day`
+        The last (in time) day the user has not voted on yet (in the given revision). If The user already voted on all
+        of them, the last day is returned.
+    """
+    days_with_opinion = (
+        DataFlagOpinion.select(DataFlagOpinion.lsd)
+        .join(MediaWikiUser)
+        .switch(DataFlagOpinion)
+        .join(DataRevision)
+        .where(MediaWikiUser.user_name == user, DataRevision.name == revision)
+    )
+    days_with_opinion = [d.lsd for d in days_with_opinion]
+    for d in reversed(days):
+        if d.lsd not in days_with_opinion:
+            return d
+    return days[-1]
