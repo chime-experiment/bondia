@@ -26,7 +26,7 @@ class HeatMapPlot(BondiaPlot, param.Parameterized):
     """
 
     # parameters
-    transpose = param.Boolean(default=True)
+    transpose = param.Boolean(default=False)
     logarithmic_colorscale = param.Boolean(default=False)
     serverside_rendering = param.Selector()
     colormap_range = param.Range(constant=False)
