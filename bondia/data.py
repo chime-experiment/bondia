@@ -40,6 +40,7 @@ class DataLoader(Reader):
 
     def __init__(self):
         self._index = {}
+        self._index_by_path = {}
 
         # Set up periodic data file indexing
         self._periodic_indexer = None
@@ -160,7 +161,11 @@ class DataLoader(Reader):
         return new_lsds
 
     def load_file(self, revision: str, day: Day, file_type: str):
-        """Load the data of one day from disk."""
+        """
+        Load the data of one day from disk.
+
+        Data is loaded from disk only once and then cached.
+        """
         try:
             f = getattr(self._index[revision][day], file_type)
         except AttributeError:
@@ -170,17 +175,31 @@ class DataLoader(Reader):
                 f"Couldn't find data for {not_found} when loading revision {revision}, day {day}"
             )
         if isinstance(f, CONTAINER_TYPES[file_type]):
-            return getattr(self._index[revision][day], file_type)
+            return f
         logger.debug(f"Loading {file_type} file for {revision}, {day}...")
-        path = getattr(self._index[revision][day], file_type)
-        if path is None:
+        if f is None:
             raise DataError(f"{file_type} for day {day}, {revision} not available.")
         setattr(
             self._index[revision][day],
             file_type,
-            CONTAINER_TYPES[file_type].from_file(path),
+            CONTAINER_TYPES[file_type].from_file(f),
         )
         return getattr(self._index[revision][day], file_type)
+
+    def load_file_from_path(self, path: os.PathLike, container):
+        """
+        Load a special file from path.
+
+        Data is loaded from disk only once and then cached.
+        """
+        try:
+            return self._index_by_path[path]
+        except KeyError:
+            if not os.path.isfile(path):
+                raise DataError(f"Couldn't find a file at path '{path}'")
+            logger.debug(f"Loading special file from path '{path}'...")
+            self._index_by_path[path] = container.from_file(path)
+            return self._index_by_path[path]
 
 
 class LSD:
