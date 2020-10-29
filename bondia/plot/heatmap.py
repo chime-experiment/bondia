@@ -41,7 +41,7 @@ class HeatMapPlot(BondiaPlot, param.Parameterized):
         from holoviews.operation.datashader import datashade, rasterize
 
         self.param["serverside_rendering"].objects = [None, rasterize, datashade]
-        self.param["serverside_rendering"].default = rasterize
+        self.serverside_rendering = rasterize
 
     @param.depends("serverside_rendering", watch=True)
     def update_serverside_rendering(self):
