@@ -96,6 +96,10 @@ class RingMapPlot(HeatMapPlot, Reader):
         self._chime_obs = ephemeris.chime_observer()
 
         HeatMapPlot.__init__(self, "Ringmap", activated=True, **params)
+
+        # transpose by default
+        self.transpose = True
+
         self.read_config(config)
 
     def _finalise_config(self):
@@ -394,7 +398,7 @@ class RingMapPlot(HeatMapPlot, Reader):
             # Fix height, but make width responsive
             height=500,
             responsive=True,
-            shared_axes=False,
+            shared_axes=True,
         )
 
         return panel.Row(img, width_policy="max")
