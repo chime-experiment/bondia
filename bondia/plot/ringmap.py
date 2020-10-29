@@ -247,6 +247,14 @@ class RingMapPlot(HeatMapPlot, Reader):
                 weight_mask = weight_mask[:, np.newaxis]
                 rmap = np.where(weight_mask, np.nan, rmap)
 
+        # Set flagged data to nan
+        rmap = np.where(rmap == 0, np.nan, rmap)
+        if self.crosstalk_removal:
+            # The mean of an all-nan slice (masked?) is nan. We don't need a warning about that.
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", r"All-NaN slice encountered")
+                rmap -= np.nanmedian(rmap, axis=0)
+
         if self.template_subtraction:
             rm_stack = ccontainers.RingMap.from_file(
                 self._stack_path, freq_sel=sel_freq
@@ -266,14 +274,6 @@ class RingMapPlot(HeatMapPlot, Reader):
 
                 # FIXME: this is a hack. remove when rinmap stack file fixed.
                 rmap -= rm_stack.reshape(rm_stack.shape[0], -1, 2).mean(axis=-1)
-
-        # Set flagged data to nan
-        rmap = np.where(rmap == 0, np.nan, rmap)
-        if self.crosstalk_removal:
-            # The mean of an all-nan slice (masked?) is nan. We don't need a warning about that.
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", r"All-NaN slice encountered")
-                rmap -= np.nanmedian(rmap, axis=0)
 
         if self.transpose:
             rmap = rmap.T
