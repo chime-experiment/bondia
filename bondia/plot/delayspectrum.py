@@ -36,6 +36,9 @@ class DelaySpectrumPlot(HeatMapPlot):
         self.data = data
         self.selections = None
         HeatMapPlot.__init__(self, "Delay Spectrum", activated=True, **params)
+
+        # set default values
+        self.transpose = True
         self.logarithmic_colorscale = True
 
     @param.depends(
