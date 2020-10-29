@@ -8,7 +8,7 @@ click
 datashader
 draco @ git+https://github.com/radiocosmology/draco.git
 jinja2
-holoviews
+holoviews==1.13.5
 matplotlib
 numpy
 panel==0.10.1
