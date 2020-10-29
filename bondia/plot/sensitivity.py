@@ -219,6 +219,7 @@ class SensitivityPlot(HeatMapPlot, Reader):
             height=500,
             responsive=True,
             bgcolor="lightgray",
+            shared_axes=True,
         )
 
         return panel.Row(img, width_policy="max")
