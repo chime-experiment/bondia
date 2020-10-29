@@ -263,12 +263,24 @@ class RingMapPlot(HeatMapPlot, Reader):
             rm_stack = ccontainers.RingMap.from_file(
                 self._stack_path, freq_sel=sel_freq
             )
+
+            # The stack file has all polarizations, so we can't reuse sel_pol
+            if self.polarization == self.mean_pol_text:
+                stack_sel_pol = np.where(
+                    (rm_stack.index_map["pol"] == "XX")
+                    | (rm_stack.index_map["pol"] == "YY")
+                )[0]
+            else:
+                stack_sel_pol = np.where(
+                    rm_stack.index_map["pol"] == self.polarization
+                )[0]
+
             try:
-                rm_stack = np.squeeze(rm_stack.map[sel_beam, sel_pol, sel_freq])
+                rm_stack = np.squeeze(rm_stack.map[sel_beam, stack_sel_pol, sel_freq])
             except IndexError as err:
                 logger.error(
                     f"map dataset of ringmap stack file "
-                    f"is missing [{sel_beam}, {sel_pol}, {sel_freq}] (beam, polarization, "
+                    f"is missing [{sel_beam}, {stack_sel_pol}, {sel_freq}] (beam, polarization, "
                     f"frequency). map has shape {rm_stack.map.shape}:\n{err}"
                 )
                 self.template_subtraction = False
