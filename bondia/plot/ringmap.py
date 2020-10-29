@@ -398,7 +398,7 @@ class RingMapPlot(HeatMapPlot, Reader):
             # Fix height, but make width responsive
             height=500,
             responsive=True,
-            shared_axes=False,
+            shared_axes=True,
         )
 
         return panel.Row(img, width_policy="max")
