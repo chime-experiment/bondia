@@ -260,9 +260,14 @@ class RingMapPlot(HeatMapPlot, Reader):
                 rmap -= np.nanmedian(rmap, axis=0)
 
         if self.template_subtraction:
-            rm_stack = ccontainers.RingMap.from_file(
-                self._stack_path, freq_sel=sel_freq
-            )
+            try:
+                rm_stack = self.data.load_file_from_path(
+                    self._stack_path, ccontainers.RingMap
+                )
+            except DataError as err:
+                return panel.pane.Markdown(
+                    f"Error: {str(err)}. Please report this problem."
+                )
 
             # The stack file has all polarizations, so we can't reuse sel_pol
             if self.polarization == self.mean_pol_text:
