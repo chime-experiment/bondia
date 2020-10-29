@@ -96,6 +96,10 @@ class RingMapPlot(HeatMapPlot, Reader):
         self._chime_obs = ephemeris.chime_observer()
 
         HeatMapPlot.__init__(self, "Ringmap", activated=True, **params)
+
+        # transpose by default
+        self.transpose = True
+
         self.read_config(config)
 
     def _finalise_config(self):
