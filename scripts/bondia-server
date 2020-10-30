@@ -79,7 +79,7 @@ def start(
 
     if chimedb_enable_test:
         chimedb_test_enable()
-    chimedb_connect(reconnect=True)
+    chimedb_connect(reconnect=True, read_write=True)
 
     if isinstance(websocket_origin, str):
         websocket_origin = [websocket_origin]
