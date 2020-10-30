@@ -33,6 +33,7 @@ class BondiaGui:
         day = opinion.get_day_without_opinion(
             days, self.rev_selector.value, self.current_user
         )
+        logger.debug(f"Chose new LSD to display: {day}.")
 
         # If day doesn't change, the opinion UI is not updated. So we do it here...
         if hasattr(self, "day_selector") and day == self.day_selector.value:

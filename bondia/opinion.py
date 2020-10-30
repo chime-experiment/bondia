@@ -107,6 +107,9 @@ def get_day_without_opinion(days, revision, user):
         .where(MediaWikiUser.user_name == user, DataRevision.name == revision)
     )
     days_with_opinion = [d.lsd for d in days_with_opinion]
+    logger.debug(
+        f"Days w/ opinion for user {user}, rev {revision}: {days_with_opinion}."
+    )
     for d in reversed(days):
         if d.lsd not in days_with_opinion:
             return d
