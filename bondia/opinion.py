@@ -20,6 +20,7 @@ bondia_dataflagopiniontype = {
 
 
 def get(lsd, revision, user):
+    user = user.capitalize()
     try:
         return (
             DataFlagOpinion.select(DataFlagOpinion.decision)
@@ -39,6 +40,7 @@ def get(lsd, revision, user):
 
 
 def insert(user, lsd, revision, decision):
+    user = user.capitalize()
     try:
         existing_decision = (
             DataFlagOpinion.select(DataFlagOpinion.id, DataFlagOpinion.decision)
@@ -99,6 +101,7 @@ def get_day_without_opinion(days, revision, user):
         The last (in time) day the user has not voted on yet (in the given revision). If The user already voted on all
         of them, the last day is returned.
     """
+    user = user.capitalize()
     days_with_opinion = (
         DataFlagOpinion.select(DataFlagOpinion.lsd)
         .join(MediaWikiUser)
