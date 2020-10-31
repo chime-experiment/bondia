@@ -24,8 +24,15 @@ class BondiaGui:
         self._opinion_header = pn.pane.Markdown(
             "####Opinion", width=width_drawer_widgets
         )
-        self._opinion_warning = pn.pane.Markdown(
-            "You didn't give your opinion yet.", width=width_drawer_widgets
+
+        # TODO: remove after https://github.com/holoviz/panel/commit/203a16c10cb8fd4c55ec7887fade561ecc222938
+        pn.pane.Alert.priority = 0
+        pn.pane.Alert._rename = dict(pn.pane.Markdown._rename, alert_type=None)
+
+        # TODO: once https://github.com/holoviz/panel/issues/1723 fixed, set width
+        # width=width_drawer_widgets, sizing_mode="fixed"
+        self._opinion_warning = pn.pane.Alert(
+            "You didn't give your opinion yet.", alert_type="primary"
         )
 
     def _choose_lsd(self):
@@ -42,6 +49,7 @@ class BondiaGui:
         return day
 
     def _update_opinion_warning(self, target, event):
+        self._opinion_warning.alert_type = "primary"
         if self.current_user is None:
             self._opinion_warning.object = """
             Log in to give your opinion
@@ -197,13 +205,27 @@ class BondiaGui:
         return template
 
     def _click_opinion(self, event, decision):
-        opinion.insert(
-            self.current_user,
-            self.day_selector.value,
-            self.rev_selector.value,
-            decision,
-        )
-        self.day_selector.value = self._choose_lsd()
+        lsd = self.day_selector.value
+        try:
+            opinion.insert(
+                self.current_user,
+                lsd,
+                self.rev_selector.value,
+                decision,
+            )
+        except BaseException as err:
+            logger.error(
+                f"Failure inserting opinion for user {self.current_user}, revision {self.rev_selector.value}, "
+                f"LSD {lsd}: {decision} ({err})"
+            )
+            self._opinion_warning.alert_type = "danger"
+            self._opinion_warning.object = (
+                f"Error adding opinion for LSD {lsd.lsd}. Please report this problem."
+            )
+        else:
+            self._opinion_warning.alert_type = "success"
+            self._opinion_warning.object = f"Opinion added for LSD {lsd.lsd}"
+            self.day_selector.value = self._choose_lsd()
 
     @property
     def current_user(self):
