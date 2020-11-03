@@ -24,6 +24,12 @@ class BondiaGui:
         self._opinion_header = pn.pane.Markdown(
             "####Opinion", width=width_drawer_widgets
         )
+        self._opinion_notes = pn.widgets.TextAreaInput(
+            placeholder="(optional) Before inserting or changing your opinion you can type a comment about it here.",
+            max_length=5000,
+            width=width_drawer_widgets,
+            height=100,
+        )
 
         # TODO: remove after https://github.com/holoviz/panel/commit/203a16c10cb8fd4c55ec7887fade561ecc222938
         pn.pane.Alert.priority = 0
@@ -67,6 +73,8 @@ class BondiaGui:
             """
         else:
             self._opinion_warning.object = "You didn't give your opinion yet."
+
+        self._opinion_notes.value = None
 
     def _update_opinion_button(self, lsd, button):
         self._opinion_buttons[
@@ -126,6 +134,7 @@ class BondiaGui:
 
         # Opinion buttons
         template.add_panel("opinion_header", self._opinion_header)
+        template.add_panel("opinion_notes", self._opinion_notes)
         template.add_panel("opinion_warning", self._opinion_warning)
         self._opinion_buttons["good"] = pn.widgets.Button(
             name="Mark day as good",
@@ -219,6 +228,7 @@ class BondiaGui:
                 lsd,
                 self.rev_selector.value,
                 decision,
+                self._opinion_notes.value,
             )
         except BaseException as err:
             logger.error(
