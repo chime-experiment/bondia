@@ -67,12 +67,15 @@ class BondiaGui:
             self._opinion_warning.object = """
             Log in to give your opinion
             """
+            self._opinion_warning.height = 80
         elif opinion.get(event.new, self.rev_selector.value, self.current_user):
             self._opinion_warning.object = """
             **You already voted on the data quality of this day.** Choose a different option to change your decision.
             """
+            self._opinion_warning.height = 110
         else:
             self._opinion_warning.object = "You didn't give your opinion yet."
+            self._opinion_warning.height = 80
 
         self._opinion_notes.value = None
 
