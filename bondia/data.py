@@ -1,10 +1,3 @@
-from typing import Type, Dict, Union
-
-from caput.config import Property, Reader
-from ch_pipeline.core import containers as ccontainers
-from ch_pipeline.core.containers import RingMap
-from draco.core import containers
-
 from collections import OrderedDict
 import glob
 import logging
@@ -13,8 +6,11 @@ from pathlib import Path
 import signal
 import sys
 import threading
+from typing import Type, Dict, Union
 
-from draco.core.containers import DelaySpectrum
+from caput.config import Property, Reader
+from ch_pipeline.core.containers import RingMap
+from draco.core.containers import DelaySpectrum, RFIMask, SystemSensitivity
 
 from .util.day import Day
 from .util.exception import DataError
@@ -28,10 +24,10 @@ FILE_TYPES = {
     "rfi": "rfi_mask_lsd_*.h5",
 }
 CONTAINER_TYPES: Dict[str, Type[Union[DelaySpectrum, RingMap]]] = {
-    "delayspectrum": containers.DelaySpectrum,
-    "ringmap": ccontainers.RingMap,
-    "sensitivity": containers.SystemSensitivity,
-    "rfi": containers.RFIMask,
+    "delayspectrum": DelaySpectrum,
+    "ringmap": RingMap,
+    "sensitivity": SystemSensitivity,
+    "rfi": RFIMask,
 }
 
 
