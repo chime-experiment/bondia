@@ -82,12 +82,14 @@ def insert(user, lsd, revision, decision):
         existing_decision.save()
 
 
-def get_day_without_opinion(days, revision, user):
+def get_day_without_opinion(last_selected_day, days, revision, user):
     """
     Find a day the user hasn't voted on.
 
     Parameters
     ----------
+    last_selected_day : :class:`Day` or None
+        The last day that was selected.
     days : List[:class:`Day`]
         Days to choose from. Has to be sorted from older to newer days.
     revision : str
@@ -98,8 +100,9 @@ def get_day_without_opinion(days, revision, user):
     Returns
     -------
     day : :class:`Day`
-        The last (in time) day the user has not voted on yet (in the given revision). If The user already voted on all
-        of them, the last day is returned.
+        If possible the next later day. If there is no later day without an opinion by that user, show the next older
+        day without an opinion. If there is no day without opinion by that user, the last selected day is returned.
+        If `last_selected_day` is None, the latest day without an opinion by that user will be returned.
     """
     user = user.capitalize()
     days_with_opinion = (
@@ -113,7 +116,26 @@ def get_day_without_opinion(days, revision, user):
     logger.debug(
         f"Days w/ opinion for user {user}, rev {revision}: {days_with_opinion}."
     )
-    for d in reversed(days):
-        if d.lsd not in days_with_opinion:
-            return d
-    return days[-1]
+
+    if last_selected_day is None:
+        # Simply return the latest day w/o opinion by that user
+        for d in reversed(days):
+            if d.lsd not in days_with_opinion:
+                return d
+        return days[-1]
+
+    # index of currently selected day
+    day_i = days.index(last_selected_day)
+
+    # look for a later day w/o opinion
+    for i in range(day_i, len(days)):
+        if days[i].lsd not in days_with_opinion:
+            return days[i]
+
+    # look for an earlier day w/o opinion
+    for i in range(day_i, 0, -1):
+        if days[i].lsd not in days_with_opinion:
+            return days[i]
+
+    # keep the same day
+    return last_selected_day
