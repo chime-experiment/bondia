@@ -36,16 +36,21 @@ class BondiaGui:
         )
 
     def _choose_lsd(self):
+        if hasattr(self, "day_selector"):
+            selected_day = self.day_selector.value
+        else:
+            selected_day = None
+
         days = self._data.days(self.rev_selector.value)
         if self.current_user is None:
             return days[-1]
         day = opinion.get_day_without_opinion(
-            days, self.rev_selector.value, self.current_user
+            selected_day, days, self.rev_selector.value, self.current_user
         )
         logger.debug(f"Chose new LSD to display: {day}.")
 
         # If day doesn't change, the opinion UI is not updated. So we do it here...
-        if hasattr(self, "day_selector") and day == self.day_selector.value:
+        if hasattr(self, "day_selector") and day == selected_day:
             self.day_selector.param.trigger("value")
 
         return day
