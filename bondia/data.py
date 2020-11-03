@@ -5,6 +5,7 @@ from ch_pipeline.core import containers as ccontainers
 from ch_pipeline.core.containers import RingMap
 from draco.core import containers
 
+from collections import OrderedDict
 import glob
 import logging
 import os
@@ -157,6 +158,11 @@ class DataLoader(Reader):
 
                 if rev in new_lsds and len(new_lsds[rev]) > 0:
                     logger.info(f"Found new {rev} data for day(s) {new_lsds[rev]}.")
+
+                    # Sort the new days into the right positions in the ordered dict
+                    self._index[rev] = OrderedDict(
+                        sorted(self._index[rev].items(), key=lambda item: item[0].lsd)
+                    )
 
         return new_lsds
 
