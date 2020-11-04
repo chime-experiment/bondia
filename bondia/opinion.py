@@ -41,7 +41,7 @@ def get(lsd, revision, user):
         return None
 
 
-def insert(user, lsd, revision, decision):
+def insert(user, lsd, revision, decision, notes):
     if lsd is None:
         return
     user = user.capitalize()
@@ -60,7 +60,7 @@ def insert(user, lsd, revision, decision):
         )
     except DataFlagOpinion.DoesNotExist:
         logger.debug(
-            f"Inserting opinion of user {user} for {revision}, {lsd.lsd}: {decision}"
+            f"Inserting opinion of user {user} for {revision}, {lsd.lsd}: {decision} (notes: '{notes}')"
         )
         opinion_type, _ = DataFlagOpinionType.get_or_create(
             **bondia_dataflagopiniontype
@@ -75,14 +75,16 @@ def insert(user, lsd, revision, decision):
             __version__,
             lsd.lsd,
             revision.name,
+            notes,
         )
     else:
         # Update the existing opinion
         logger.debug(
             f"Updating opinion of user {user} for {revision}, {lsd.lsd} (ID {existing_decision} "
-            f"{existing_decision.id}): {existing_decision.decision} -> {decision}"
+            f"{existing_decision.id}): {existing_decision.decision} -> {decision} (notes: {notes})"
         )
         existing_decision.decision = decision
+        existing_decision.notes = notes
         existing_decision.save()
 
 

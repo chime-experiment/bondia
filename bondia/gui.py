@@ -28,6 +28,12 @@ class BondiaGui(param.Parameterized):
         self._day_filter_opinion = pn.widgets.Checkbox(
             name="Hide days I have voted for", disabled=self.current_user is None
         )
+        self._opinion_notes = pn.widgets.TextAreaInput(
+            placeholder="(optional) Before inserting or changing your opinion you can type a comment about it here.",
+            max_length=5000,
+            width=width_drawer_widgets,
+            height=100,
+        )
 
         # TODO: remove after https://github.com/holoviz/panel/commit/203a16c10cb8fd4c55ec7887fade561ecc222938
         pn.pane.Alert.priority = 0
@@ -65,12 +71,17 @@ class BondiaGui(param.Parameterized):
             self._opinion_warning.object = """
             Log in to give your opinion
             """
+            self._opinion_warning.height = 80
         elif opinion.get(event.new, self.rev_selector.value, self.current_user):
             self._opinion_warning.object = """
             **You already voted on the data quality of this day.** Choose a different option to change your decision.
             """
+            self._opinion_warning.height = 110
         else:
             self._opinion_warning.object = "You didn't give your opinion yet."
+            self._opinion_warning.height = 80
+
+        self._opinion_notes.value = None
 
     def _update_opinion_button(self, lsd, button):
         self._opinion_buttons[
@@ -154,6 +165,7 @@ class BondiaGui(param.Parameterized):
 
         # Opinion buttons
         template.add_panel("opinion_header", self._opinion_header)
+        template.add_panel("opinion_notes", self._opinion_notes)
         template.add_panel("opinion_warning", self._opinion_warning)
         self._opinion_buttons["good"] = pn.widgets.Button(
             name="Mark day as good",
@@ -251,6 +263,7 @@ class BondiaGui(param.Parameterized):
                 lsd,
                 self.rev_selector.value,
                 decision,
+                self._opinion_notes.value,
             )
         except BaseException as err:
             logger.error(
