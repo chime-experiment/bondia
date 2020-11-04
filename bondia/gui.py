@@ -79,7 +79,7 @@ class BondiaGui(param.Parameterized):
             lsd, self.rev_selector.value, self.current_user
         )
 
-    @pn.depends(pn.state.param.busy, watch=True)
+    @pn.depends(pn.state.param.busy)
     def _indicator(self, busy=False):
         # TODO: Replace with this when available: https://github.com/holoviz/panel/pull/1730
         return pn.indicators.LoadingSpinner(value=busy, width=20, height=20)
