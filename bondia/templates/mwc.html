@@ -73,6 +73,7 @@ mwc-drawer {
         <mwc-top-app-bar-fixed class="appBar">
             <mwc-button raised="" icon="menu" label="Menu" slot="navigationIcon" class="appDrawerToggleButton" align="left"></mwc-button>
             <div slot="title" style="font-size:20px;">{{ subtitle }}</div>
+            {{ embed(roots.busy_indicator) }}
             <mwc-icon-button icon="perm_identity" slot="actionItems" label="Login"></mwc-icon-button>
         </mwc-top-app-bar-fixed>
         <div class="appMain">
