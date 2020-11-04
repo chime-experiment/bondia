@@ -112,6 +112,10 @@ class RingMapPlot(HeatMapPlot, Reader):
 
     @param.depends("lsd", watch=True)
     def update_freqs(self):
+        if self.lsd is None:
+            # Anyways make sure watchers are triggered
+            self.param.trigger("frequency")
+            return
         try:
             rm = self.data.load_file(self.revision, self.lsd, "ringmap")
         except DataError as err:
@@ -126,6 +130,10 @@ class RingMapPlot(HeatMapPlot, Reader):
 
     @param.depends("frequency", watch=True)
     def update_beam(self):
+        if self.lsd is None:
+            # Anyways make sure watchers are triggered
+            self.param.trigger("beam")
+            return
         try:
             rm = self.data.load_file(self.revision, self.lsd, "ringmap")
         except DataError as err:
@@ -139,6 +147,10 @@ class RingMapPlot(HeatMapPlot, Reader):
 
     @param.depends("beam", watch=True)
     def update_pol(self):
+        if self.lsd is None:
+            # Anyways make sure watchers are triggered
+            self.param.trigger("polarization")
+            return
         try:
             rm = self.data.load_file(self.revision, self.lsd, "ringmap")
         except DataError as err:
@@ -186,6 +198,8 @@ class RingMapPlot(HeatMapPlot, Reader):
         "flags",
     )
     def view(self):
+        if self.lsd is None:
+            return panel.pane.Markdown("No data selected.")
         try:
             container = self.data.load_file(self.revision, self.lsd, "ringmap")
         except DataError as err:

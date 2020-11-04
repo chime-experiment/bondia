@@ -50,6 +50,8 @@ class DelaySpectrumPlot(HeatMapPlot):
         "helper_lines",
     )
     def view(self):
+        if self.lsd is None:
+            return panel.pane.Markdown("No data selected.")
         try:
             spectrum = self.data.load_file(self.revision, self.lsd, "delayspectrum")
         except DataError as err:
