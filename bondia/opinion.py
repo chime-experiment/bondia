@@ -20,6 +20,8 @@ bondia_dataflagopiniontype = {
 
 
 def get(lsd, revision, user):
+    if lsd is None:
+        return None
     user = user.capitalize()
     try:
         return (
@@ -40,6 +42,8 @@ def get(lsd, revision, user):
 
 
 def insert(user, lsd, revision, decision):
+    if lsd is None:
+        return
     user = user.capitalize()
     try:
         existing_decision = (
@@ -82,6 +86,36 @@ def insert(user, lsd, revision, decision):
         existing_decision.save()
 
 
+def get_days_with_opinion(revision, user):
+    user = user.capitalize()
+    days_with_opinion = (
+        DataFlagOpinion.select(DataFlagOpinion.lsd)
+        .join(MediaWikiUser)
+        .switch(DataFlagOpinion)
+        .join(DataRevision)
+        .where(MediaWikiUser.user_name == user, DataRevision.name == revision)
+    )
+    return [d.lsd for d in days_with_opinion]
+
+
+def get_days_without_opinion(days, revision, user):
+    user = user.capitalize()
+    days_with_opinion = get_days_with_opinion(revision, user)
+    logger.debug(
+        f"Days w/ opinion for user {user}, rev {revision}: {days_with_opinion}."
+    )
+    days_without_opinion = []
+
+    for d in days:
+        if d.lsd not in days_with_opinion:
+            days_without_opinion.append(d)
+
+    logger.debug(
+        f"Days w/o opinion for user {user}, rev {revision}: {days_without_opinion}."
+    )
+    return days_without_opinion
+
+
 def get_day_without_opinion(last_selected_day, days, revision, user):
     """
     Find a day the user hasn't voted on.
@@ -105,14 +139,7 @@ def get_day_without_opinion(last_selected_day, days, revision, user):
         If `last_selected_day` is None, the latest day without an opinion by that user will be returned.
     """
     user = user.capitalize()
-    days_with_opinion = (
-        DataFlagOpinion.select(DataFlagOpinion.lsd)
-        .join(MediaWikiUser)
-        .switch(DataFlagOpinion)
-        .join(DataRevision)
-        .where(MediaWikiUser.user_name == user, DataRevision.name == revision)
-    )
-    days_with_opinion = [d.lsd for d in days_with_opinion]
+    days_with_opinion = get_days_with_opinion(revision, user)
     logger.debug(
         f"Days w/ opinion for user {user}, rev {revision}: {days_with_opinion}."
     )

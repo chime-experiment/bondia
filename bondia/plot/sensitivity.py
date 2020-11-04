@@ -63,6 +63,8 @@ class SensitivityPlot(HeatMapPlot, Reader):
 
     @param.depends("lsd", watch=True)
     def update_pol(self):
+        if self.lsd is None:
+            return
         try:
             rm = self.data.load_file(self.revision, self.lsd, "sensitivity")
         except DataError as err:
@@ -86,6 +88,8 @@ class SensitivityPlot(HeatMapPlot, Reader):
         "mask_rfi",
     )
     def view(self):
+        if self.lsd is None:
+            return panel.pane.Markdown("No data selected.")
         try:
             sens_container = self.data.load_file(self.revision, self.lsd, "sensitivity")
         except DataError as err:

@@ -25,6 +25,9 @@ class BondiaGui(param.Parameterized):
         self._opinion_header = pn.pane.Markdown(
             "####Opinion", width=width_drawer_widgets
         )
+        self._day_filter_opinion = pn.widgets.Checkbox(
+            name="Hide days I have voted for", disabled=self.current_user is None
+        )
 
         # TODO: remove after https://github.com/holoviz/panel/commit/203a16c10cb8fd4c55ec7887fade561ecc222938
         pn.pane.Alert.priority = 0
@@ -104,7 +107,17 @@ class BondiaGui(param.Parameterized):
 
         def update_days(day_selector, event):
             """Update days depending on selected revision."""
-            day_selector.value = self._choose_lsd()
+            if self._day_filter_opinion.value and self.current_user is not None:
+                day_selector.options = opinion.get_days_without_opinion(
+                    list(self._data.days(self.rev_selector.value)),
+                    self.rev_selector.value,
+                    self.current_user,
+                )
+            else:
+                day_selector.options = list(self._data.days(self.rev_selector.value))
+
+            if self.day_selector.options:
+                day_selector.value = self._choose_lsd()
 
         # Add a title over the plots showing the selected day and rev (and keep it updated)
         data_description = pn.pane.Markdown(
@@ -121,6 +134,12 @@ class BondiaGui(param.Parameterized):
         # already is linked to the day selector in update_days.
         self.day_selector.link(
             data_description, callbacks={"value": update_data_description_day}
+        )
+
+        # Checkbox to show only days w/o opinion
+        template.add_panel("day_filter_opinion_checkbox", self._day_filter_opinion)
+        self._day_filter_opinion.link(
+            self.day_selector, callbacks={"value": update_days}
         )
 
         # Fill the template with components
@@ -222,6 +241,10 @@ class BondiaGui(param.Parameterized):
 
     def _click_opinion(self, event, decision):
         lsd = self.day_selector.value
+        if lsd is None:
+            self._opinion_warning.alert_type = "danger"
+            self._opinion_warning.object = "No data selected."
+            return
         try:
             opinion.insert(
                 self.current_user,
