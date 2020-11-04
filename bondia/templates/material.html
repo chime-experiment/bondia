@@ -16,6 +16,7 @@
       <button class="material-icons mdc-top-app-bar__navigation-icon mdc-icon-button">menu</button>
       <span class="mdc-top-app-bar__title">{{ subtitle }}</span>
       <button class="mdc-icon-button material-icons">account_circle</button>
+      {{ embed(roots.busy_indicator) }}
     </section>
   </div>
 </header>
@@ -31,6 +32,7 @@
         <hr>
         <div align="center"><p><h4>Select Day</h4></p>
         {{ embed(roots.day_selector) | indent(8) }}</div>
+        {{ embed(roots.day_filter_opinion_checkbox) }}
         <hr>
         <div>{{ embed(roots.plot_selector) | indent(8) }}</div>
         <hr>

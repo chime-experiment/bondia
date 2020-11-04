@@ -22,6 +22,7 @@
       <!-- Navigation. We hide it in small screens. -->
       <nav class="mdl-navigation">
         <a class="mdl-navigation__link" href="/bondia/logout">Logout <i>{{ username }}</i></a>
+        {{ embed(roots.busy_indicator) }}
       </nav>
     </div>
   </header>
@@ -33,6 +34,7 @@
         <div><h4>Select Data</h4></div>
         {{ embed(roots.rev_selector) }}
         {{ embed(roots.day_selector) }}
+        {{ embed(roots.day_filter_opinion_checkbox) }}
         <hr>
         <div><h4>Select Plots</h4></div>
         <div>{{ embed(roots.toggle_delay_spectrum) }}</div>
