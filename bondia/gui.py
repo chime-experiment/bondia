@@ -1,5 +1,6 @@
 import logging
 import panel as pn
+import param
 
 from chimedb.dataflag.orm import DataFlagOpinion
 
@@ -12,7 +13,7 @@ from .plot.sensitivity import SensitivityPlot
 logger = logging.getLogger(__name__)
 
 
-class BondiaGui:
+class BondiaGui(param.Parameterized):
     def __init__(self, template, width_drawer_widgets, data_loader, config_plots):
         self._width_drawer_widgets = width_drawer_widgets
         self._template = template
@@ -75,6 +76,11 @@ class BondiaGui:
             lsd, self.rev_selector.value, self.current_user
         )
 
+    @pn.depends(pn.state.param.busy, watch=True)
+    def _indicator(self, busy=False):
+        # TODO: Replace with this when available: https://github.com/holoviz/panel/pull/1730
+        return pn.indicators.LoadingSpinner(value=busy, width=20, height=20)
+
     def populate_template(self, template):
         self._plot = [
             DelaySpectrumPlot(self._data, self._config_plots.get("delayspectrum", {})),
@@ -123,6 +129,9 @@ class BondiaGui:
         template.add_panel("data_description2", data_description)
         template.add_panel("day_selector", self.day_selector)
         template.add_panel("rev_selector", self.rev_selector)
+
+        # Loading spinner
+        template.add_panel("busy_indicator", pn.Column(self._indicator))
 
         # Opinion buttons
         template.add_panel("opinion_header", self._opinion_header)
