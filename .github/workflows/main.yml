@@ -101,41 +101,9 @@ jobs:
       run: |
         pip install wheel
 
-    - name: Install chimedb
+    - name: Install python packages from private repos
       run: |
-        cd chimedb
-        pip install .
-        cd ..
-
-    - name: Install chimedb_di
-      run: |
-        cd chimedb_di
-        pip install .
-        cd ..
-
-    - name: Install chimedb_dataflag
-      run: |
-        cd chimedb_dataflag
-        pip install .
-        cd ..
-
-    - name: Install chimedb_config
-      run: |
-        cd chimedb_config
-        pip install .
-        cd ..
-
-    - name: Install ch_util
-      run: |
-        cd ch_util
-        pip install .
-        cd ..
-
-    - name: Install ch_pipeline
-      run: |
-        cd ch_pipeline
-        pip install .
-        cd ..
+        pip install ./ch_util ./chimedb ./chimedb_di ./chimedb_dataflag ./chimedb_config ./ch_pipeline
 
     - name: Remove cloned repositories
       run: |
