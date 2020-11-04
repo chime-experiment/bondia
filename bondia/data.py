@@ -210,15 +210,10 @@ class LSD:
 
         for file_type, file_type_glob in FILE_TYPES.items():
             file = glob.glob(os.path.join(path, file_type_glob))
-            if len(file) > 1:
+            if len(file) != 1:
                 raise DataError(
                     f"Found {len(file)} {file_type} files in {path} (Expected 1)."
                 )
-            elif len(file) == 0:
-                logger.warning(
-                    f"Found {len(file)} {file_type} files in {path} (Expected 1)."
-                )
-                continue
             file = file[0]
 
             logger.debug(f"Found {rev} file for lsd {day}: {file}")
