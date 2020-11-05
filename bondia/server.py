@@ -50,7 +50,7 @@ class BondiaServer(Reader):
             raise ConfigError("No data available.")
 
     def gui_instance(self):
-        logger.debug("Starting user session.")
+        # logger.debug(f"Starting user session {pn.state.curdoc.session_context.id}.")
         instance = BondiaGui(
             self._template,
             self._width_drawer_widgets,
