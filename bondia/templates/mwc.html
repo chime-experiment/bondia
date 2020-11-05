@@ -12,6 +12,11 @@
 <link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
 <link href="https://use.fontawesome.com/releases/v5.11.2/css/all.css" rel="stylesheet" type="text/css">
 
+<!-- List unused components here -->
+<div style="display: none;">
+{{ embed(roots.data_description1) }}{{ embed(roots.data_description2) }}
+</div>
+
 <style>
 body {
     font-family: roboto;
@@ -51,23 +56,36 @@ mwc-drawer {
         <p><h4>Select Data</h4></p>
         {{ embed(roots.rev_selector) }}
         {{ embed(roots.day_selector) }}
+        {{ embed(roots.day_filter_opinion_checkbox) }}
         <hr>
         <div align="center"><p><h4>Select Plots</h4></p></div>
         <div>{{ embed(roots.toggle_delay_spectrum) }}</div>
+        <div>{{ embed(roots.toggle_sensitivity) }}</div>
+        <div>{{ embed(roots.toggle_ringmap) }}</div>
+
         <hr>
-        <div align="center"><p><h4>Decision</h4></p></div>
-        <mwc-button disabled raised="" label="Mark day as good" align="left"></mwc-button><br><br>
-        <mwc-button disabled raised="" label="Mark day as bad" align="left"></mwc-button><br><br>
-        <mwc-button disabled raised="" label="I don't know" align="left"></mwc-button>
+        <div>{{ embed(roots.opinion_header) }}</div>
+        <div>{{ embed(roots.opinion_good) }}</div>
+        <div>{{ embed(roots.opinion_bad) }}</div>
+        <div>{{ embed(roots.opinion_unsure) }}</div>
+        <div>{{ embed(roots.opinion_notes) }}</div>
+        <div>{{ embed(roots.opinion_warning) }}</div>
     </div>
     <div class="appContent" slot="appContent">
         <mwc-top-app-bar-fixed class="appBar">
-            <mwc-icon-button icon="menu" slot="navigationIcon" class="appDrawerToggleButton"></mwc-icon-button>
+            <mwc-button raised="" icon="menu" label="Menu" slot="navigationIcon" class="appDrawerToggleButton" align="left"></mwc-button>
             <div slot="title" style="font-size:20px;">{{ subtitle }}</div>
+            {{ embed(roots.busy_indicator) }}
             <mwc-icon-button icon="perm_identity" slot="actionItems" label="Login"></mwc-icon-button>
         </mwc-top-app-bar-fixed>
         <div class="appMain">
+            <h1>{{ embed(roots.data_description) }}</h1>
+            <h2>{{ title_delay_spectrum }}</h2>
             {{ embed(roots.plot_delay_spectrum) }}
+            <h2>{{ title_sensitivity }}</h2>
+            {{ embed(roots.plot_sensitivity) }}
+            <h2>{{ title_ringmap }}</h2>
+            {{ embed(roots.plot_ringmap) }}
         </div>
     </div>
 </mwc-drawer>

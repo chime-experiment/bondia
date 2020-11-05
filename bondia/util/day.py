@@ -1,6 +1,8 @@
-from ch_util.ephemeris import csd_to_unix, unix_to_csd
+from ch_util.ephemeris import csd_to_unix, unix_to_csd, unix_to_datetime, chime_observer
 import datetime
 import time
+
+chime_observer = chime_observer()
 
 
 class Day:
@@ -12,7 +14,7 @@ class Day:
     def from_lsd(cls, lsd: int):
         unix = csd_to_unix(lsd)
         lsd = int(lsd)
-        date = datetime.date.fromtimestamp(unix)
+        date = unix_to_datetime(unix).date()
         day = cls(lsd, date)
         return day
 
@@ -30,6 +32,14 @@ class Day:
     @property
     def date(self):
         return self._date
+
+    @property
+    def start_time(self):
+        return chime_observer.lsd_to_unix(self._lsd)
+
+    @property
+    def end_time(self):
+        return chime_observer.lsd_to_unix(self._lsd + 1)
 
     def __repr__(self):
         return f"{self.lsd} [{self.date.isoformat()} (PT)]"

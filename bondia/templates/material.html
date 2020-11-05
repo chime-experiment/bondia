@@ -16,6 +16,7 @@
       <button class="material-icons mdc-top-app-bar__navigation-icon mdc-icon-button">menu</button>
       <span class="mdc-top-app-bar__title">{{ subtitle }}</span>
       <button class="mdc-icon-button material-icons">account_circle</button>
+      {{ embed(roots.busy_indicator) }}
     </section>
   </div>
 </header>
@@ -31,21 +32,16 @@
         <hr>
         <div align="center"><p><h4>Select Day</h4></p>
         {{ embed(roots.day_selector) | indent(8) }}</div>
+        {{ embed(roots.day_filter_opinion_checkbox) }}
         <hr>
         <div>{{ embed(roots.plot_selector) | indent(8) }}</div>
         <hr>
-        <div align="center"><p><h4>Decision</h4></p></div>
-        <div>
-            <button class="mdc-button--raised">
-              <span class="mdc-button__label">Mark day as bad</span>
-            </button>
-            <button class="mdc-button--raised">
-              <span class="mdc-button__label">Mark day as good</span>
-            </button>
-            <button class="mdc-button--raised">
-              <span class="mdc-button__label">I don't know</span>
-            </button>
-        </div>
+        <div>{{ embed(roots.opinion_header) }}</div>
+        <div>{{ embed(roots.opinion_good) }}</div>
+        <div>{{ embed(roots.opinion_bad) }}</div>
+        <div>{{ embed(roots.opinion_unsure) }}</div>
+        <div>{{ embed(roots.opinion_notes) }}</div>
+        <div>{{ embed(roots.opinion_warning) }}</div>
     </div>
   </div>
 </aside>

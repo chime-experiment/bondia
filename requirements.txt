@@ -1,13 +1,16 @@
-bokeh==2.1.1
+bokeh==2.2.3
 caput @ git+https://github.com/radiocosmology/caput.git
-chimedb @ https://github.com/chime-experiment/chimedb.git
-chimedb.dataflag @ https://github.com/chime-experiment/chimedb_dataflag.git
+chimedb @ git+https://github.com/chime-experiment/chimedb.git
+chimedb.dataflag @ git+https://github.com/chime-experiment/chimedb_dataflag.git
+ch_pipeline @ git+https://github.com/chime-experiment/ch_pipeline.git
 ch_util @ git+https://github.com/chime-experiment/ch_util.git
 click
 datashader
 draco @ git+https://github.com/radiocosmology/draco.git
 jinja2
-holoviews
+holoviews==1.13.5
 matplotlib
-panel==0.9.7
+numpy
+panel==0.10.1
 param
+skyfield<=1.26

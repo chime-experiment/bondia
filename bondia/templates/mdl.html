@@ -1,0 +1,70 @@
+<!-- Always shows a header, even in smaller screens. -->
+{% extends base %}
+
+<!-- goes in head -->
+{% block postamble %}
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+<link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-deep_orange.min.css" />
+<script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+<link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
+<link href="https://use.fontawesome.com/releases/v5.11.2/css/all.css" rel="stylesheet" type="text/css">
+{% endblock %}
+
+{% block contents %}
+<div class="mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer">
+  <header class="mdl-layout__header">
+    <div class="mdl-layout__header-row">
+      <!-- Title -->
+      <span class="mdl-layout-title">{{ subtitle }}</span>
+      <!-- Add spacer, to align navigation to the right -->
+      <div class="mdl-layout-spacer"></div>
+      <!-- Navigation. We hide it in small screens. -->
+      <nav class="mdl-navigation">
+        <a class="mdl-navigation__link" href="/bondia/logout">Logout <i>{{ username }}</i></a>
+        {{ embed(roots.busy_indicator) }}
+      </nav>
+    </div>
+  </header>
+  <div class="mdl-layout__drawer">
+    <span class="mdl-layout-title"><a href="https://github.com/chime-experiment/bondia" target="_blank">
+            <i class="fab fa-github"></i></a>  {{ app_title }}</span>
+    <nav class="mdl-navigation">
+      <div  align="center">
+        <div><h4>Select Data</h4></div>
+        {{ embed(roots.rev_selector) }}
+        {{ embed(roots.day_selector) }}
+        {{ embed(roots.day_filter_opinion_checkbox) }}
+        <hr>
+        <div><h4>Select Plots</h4></div>
+        <div>{{ embed(roots.toggle_delay_spectrum) }}</div>
+        <div>{{ embed(roots.toggle_sensitivity) }}</div>
+        <div>{{ embed(roots.toggle_ringmap) }}</div>
+        <hr>
+        <div>{{ embed(roots.opinion_header) }}</div>
+        <div>{{ embed(roots.opinion_notes) }}</div>
+        <div>{{ embed(roots.opinion_good) }}</div>
+        <div>{{ embed(roots.opinion_bad) }}</div>
+        <div>{{ embed(roots.opinion_unsure) }}</div>
+        <div>{{ embed(roots.opinion_warning) }}</div>
+      </div>
+    </nav>
+  </div>
+  <main class="mdl-layout__content">
+    <div class="page-content" align="center">
+      {{ embed(roots.data_description) }}
+      <h4>{{ title_delay_spectrum }}</h4>
+      {{ embed(roots.plot_delay_spectrum) }}
+      <h4>{{ title_sensitivity }}</h4>
+      {{ embed(roots.plot_sensitivity) }}
+      <h4>{{ title_ringmap }}</h4>
+      {{ embed(roots.plot_ringmap) }}
+    </div>
+
+    <!-- List unused components here -->
+    <div style="display: none;">
+    {{ embed(roots.data_description1) }}{{ embed(roots.data_description2) }}
+    </div>
+  </main>
+</div>
+{% endblock %}

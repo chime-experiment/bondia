@@ -4,3 +4,7 @@ class Error(Exception):
 
 class ConfigError(Error):
     pass
+
+
+class DataError(Error):
+    pass
