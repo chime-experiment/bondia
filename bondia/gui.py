@@ -29,7 +29,7 @@ class BondiaGui(param.Parameterized):
             name="Hide days I have voted for", disabled=self.current_user is None
         )
         self._opinion_notes = pn.widgets.TextAreaInput(
-            placeholder="(optional) Before inserting or changing your opinion you can type a comment about it here.",
+            placeholder="Before inserting or changing your opinion you can type a comment about it here.",
             max_length=5000,
             width=width_drawer_widgets,
             height=100,
@@ -256,6 +256,12 @@ class BondiaGui(param.Parameterized):
         if lsd is None:
             self._opinion_warning.alert_type = "danger"
             self._opinion_warning.object = "No data selected."
+            return
+        if self._opinion_notes.value is None and decision == "bad":
+            self._opinion_warning.alert_type = "danger"
+            self._opinion_warning.object = (
+                "Marking data as 'bad' requires inserting a comment above."
+            )
             return
         try:
             opinion.insert(
