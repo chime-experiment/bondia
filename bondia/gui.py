@@ -1,4 +1,5 @@
 import logging
+import holoviews as hv
 import panel as pn
 import param
 
@@ -45,6 +46,8 @@ class BondiaGui(param.Parameterized):
             "You didn't give your opinion yet.", alert_type="primary"
         )
 
+        self._day_stats = pn.Row(pn.Column(), pn.Column())
+
     def _choose_lsd(self):
         if hasattr(self, "day_selector"):
             selected_day = self.day_selector.value
@@ -82,6 +85,28 @@ class BondiaGui(param.Parameterized):
             self._opinion_warning.height = 80
 
         self._opinion_notes.value = None
+
+        # Also update day stats here
+        if self.day_selector.value is not None:
+            num_opinions = opinion.get_opinions_for_day(self.day_selector.value)
+            num_opinions.update({"total": sum(num_opinions.values())})
+            self._day_stats[0] = hv.Table(
+                (list(num_opinions.keys()), list(num_opinions.values())),
+                "Decision",
+                "Number of opinions",
+                label="Opinions on this day",
+            ).opts(sortable=False, index_position=None)
+        opinions_by_user = opinion.get_user_stats(zero=False)
+        opinions_by_user = [
+            (k, opinions_by_user[k])
+            for k in sorted(opinions_by_user, key=opinions_by_user.get, reverse=True)
+        ]
+        self._day_stats[1] = hv.Table(
+            opinions_by_user,
+            "User",
+            "Number of opinions",
+            label="Highscore",
+        )
 
     def _update_opinion_button(self, lsd, button):
         self._opinion_buttons[
@@ -205,6 +230,8 @@ class BondiaGui(param.Parameterized):
         self.day_selector.link(
             self._opinion_warning, callbacks={"value": self._update_opinion_warning}
         )
+
+        template.add_panel("day_stats", self._day_stats)
 
         # Trigger opinion UI callbacks once now
         self.day_selector.param.trigger("value")
