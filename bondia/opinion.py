@@ -168,3 +168,56 @@ def get_day_without_opinion(last_selected_day, days, revision, user):
 
     # keep the same day
     return last_selected_day
+
+
+def get_opinions_for_day(day):
+    """
+    Returns the number of opinions (sorted by decision) for one day.
+
+    Parameters
+    ----------
+    day : :class:`Day`
+
+    Returns
+    -------
+    Dict[string, int]
+        Number of good, unsure, bad opinions
+    """
+    num_opinions = {}
+    for decision in DataFlagOpinion.decision.enum_list:
+        num_opinions[decision] = (
+            DataFlagOpinion.select()
+            .where(DataFlagOpinion.lsd == day.lsd, DataFlagOpinion.decision == decision)
+            .count()
+        )
+    return num_opinions
+
+
+def get_user_stats(zero=True):
+    """
+    Get number of opinions entered per user.
+
+    Parameters
+    ----------
+    zero : bool
+        Include users without opinions
+
+    Returns
+    -------
+    Dict[string, int]
+        User name, number of opinions entered total.
+    """
+    num_opinions = {}
+    for user_id in MediaWikiUser.select(MediaWikiUser.user_id):
+        user_name = (
+            MediaWikiUser.select(MediaWikiUser.user_name)
+            .where(MediaWikiUser.user_id == user_id)
+            .get()
+            .user_name
+        )
+        count = (
+            DataFlagOpinion.select().where(DataFlagOpinion.user_id == user_id).count()
+        )
+        if zero or count > 0:
+            num_opinions[user_name] = count
+    return num_opinions
