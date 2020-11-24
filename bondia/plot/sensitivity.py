@@ -9,12 +9,10 @@ from holoviews.plotting.util import process_cmap
 from matplotlib import cm as matplotlib_cm
 
 from caput.config import Reader, Property
-from ch_util import ephemeris
+from ch_util.ephemeris import chime, csd, skyfield_wrapper, csd_to_unix, unix_to_csd
 
 from .heatmap import HeatMapPlot
 
-# TODO: the ephemeris module will get moved to caput soon
-from ..util.ephemeris import source_rise_set
 from ..util.exception import DataError
 from ..util.plotting import hv_image_with_gaps
 
@@ -55,7 +53,6 @@ class SensitivityPlot(HeatMapPlot, Reader):
     def __init__(self, data, config, **params):
         self.data = data
         self.selections = None
-        self._chime_obs = ephemeris.chime_observer()
 
         HeatMapPlot.__init__(self, "Sensitivity", activated=True, **params)
         self.read_config(config)
@@ -98,7 +95,7 @@ class SensitivityPlot(HeatMapPlot, Reader):
             )
 
         # Index map for ra (x-axis)
-        sens_csd = ephemeris.csd(sens_container.time)
+        sens_csd = csd(sens_container.time)
         index_map_ra = (sens_csd % 1) * 360
         axis_name_ra = "RA [degrees]"
 
@@ -179,17 +176,14 @@ class SensitivityPlot(HeatMapPlot, Reader):
             )
 
         if self.mark_day_time:
-            # Calculate the sun rise/set times on this sidereal day (it's not clear to me there
-            # is exactly one of each per day, I think not)
-            sf_obs = self._chime_obs.skyfield_obs()
+            # Calculate the sun rise/set times on this sidereal day
 
             # Start and end times of the CSD
-            start_time = self._chime_obs.lsd_to_unix(self.lsd.lsd)
-            end_time = self._chime_obs.lsd_to_unix(self.lsd.lsd + 1)
+            start_time = csd_to_unix(self.lsd.lsd)
+            end_time = csd_to_unix(self.lsd.lsd + 1)
 
-            times, rises = source_rise_set(
-                sf_obs,
-                ephemeris.skyfield_wrapper.ephemeris["sun"],
+            times, rises = chime.rise_set_times(
+                skyfield_wrapper.ephemeris["sun"],
                 start_time,
                 end_time,
                 diameter=-10,
@@ -198,9 +192,9 @@ class SensitivityPlot(HeatMapPlot, Reader):
             sun_set = 0
             for t, r in zip(times, rises):
                 if r:
-                    sun_rise = (self._chime_obs.unix_to_lsd(t) % 1) * 360
+                    sun_rise = (unix_to_csd(t) % 1) * 360
                 else:
-                    sun_set = (self._chime_obs.unix_to_lsd(t) % 1) * 360
+                    sun_set = (unix_to_csd(t) % 1) * 360
 
             # Highlight the day time data
             opts = {

@@ -13,4 +13,4 @@ matplotlib
 numpy
 panel==0.10.2
 param
-skyfield<=1.26
+skyfield>=1.31
