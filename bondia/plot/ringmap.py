@@ -12,12 +12,11 @@ from matplotlib import cm as matplotlib_cm
 
 from caput.config import Reader, Property
 from ch_pipeline.core import containers as ccontainers
-from ch_util import ephemeris, tools
+from ch_util import tools
+from ch_util.ephemeris import csd_to_unix, unix_to_csd, skyfield_wrapper, chime
 
 from .heatmap import HeatMapPlot
 
-# TODO: the ephemeris module will get moved to caput soon
-from ..util.ephemeris import source_transit, source_rise_set
 from ..util.exception import DataError
 from ..util.flags import get_flags_cached, get_flags
 
@@ -93,7 +92,6 @@ class RingMapPlot(HeatMapPlot, Reader):
     def __init__(self, data, config, **params):
         self.data = data
         self.selections = None
-        self._chime_obs = ephemeris.chime_observer()
 
         HeatMapPlot.__init__(self, "Ringmap", activated=True, **params)
 
@@ -237,14 +235,15 @@ class RingMapPlot(HeatMapPlot, Reader):
             else:
                 flag_time_spans = get_flags(
                     self.flags,
-                    self._chime_obs.lsd_to_unix(self.lsd.lsd),
-                    self._chime_obs.lsd_to_unix(self.lsd.lsd + 1),
+                    csd_to_unix(self.lsd.lsd),
+                    csd_to_unix(self.lsd.lsd + 1),
                 )
             csd_arr = self.lsd.lsd + container.index_map["ra"] / 360.0
             flag_mask = np.zeros_like(csd_arr, dtype=np.bool)
-            u2l = self._chime_obs.unix_to_lsd
             for type_, ca, cb in flag_time_spans:
-                flag_mask[(csd_arr > u2l(ca)) & (csd_arr < u2l(cb))] = True
+                flag_mask[
+                    (csd_arr > unix_to_csd(ca)) & (csd_arr < unix_to_csd(cb))
+                ] = True
             flag_mask = flag_mask[:, np.newaxis]
             rmap = np.where(flag_mask, np.nan, rmap)
 
@@ -359,18 +358,18 @@ class RingMapPlot(HeatMapPlot, Reader):
 
         if self.mark_moon:
             # Put a ring around the location of the moon if it transits on this day
-            eph = ephemeris.skyfield_wrapper.ephemeris
+            eph = skyfield_wrapper.ephemeris
 
             # Start and end times of the CSD
-            st = self._chime_obs.lsd_to_unix(self.lsd.lsd)
-            et = self._chime_obs.lsd_to_unix(self.lsd.lsd + 1)
+            st = csd_to_unix(self.lsd.lsd)
+            et = csd_to_unix(self.lsd.lsd + 1)
 
-            moon_time, moon_dec = source_transit(
-                self._chime_obs.skyfield_obs(), eph["moon"], st, et, return_dec=True
+            moon_time, moon_dec = chime.transit_times(
+                eph["moon"], st, et, return_dec=True
             )
 
             if len(moon_time):
-                lunar_transit = self._chime_obs.unix_to_lsd(moon_time[0])
+                lunar_transit = unix_to_csd(moon_time[0])
                 lunar_dec = moon_dec[0]
                 lunar_ra = (lunar_transit % 1) * 360.0
                 lunar_za = np.sin(np.radians(lunar_dec - 49.0))
@@ -380,17 +379,14 @@ class RingMapPlot(HeatMapPlot, Reader):
                     img *= hv.Ellipse(lunar_za, lunar_ra, (0.04, 21))
 
         if self.mark_day_time:
-            # Calculate the sun rise/set times on this sidereal day (it's not clear to me there
-            # is exactly one of each per day, I think not)
-            sf_obs = self._chime_obs.skyfield_obs()
+            # Calculate the sun rise/set times on this sidereal day
 
             # Start and end times of the CSD
-            start_time = self._chime_obs.lsd_to_unix(self.lsd.lsd)
-            end_time = self._chime_obs.lsd_to_unix(self.lsd.lsd + 1)
+            start_time = csd_to_unix(self.lsd.lsd)
+            end_time = csd_to_unix(self.lsd.lsd + 1)
 
-            times, rises = source_rise_set(
-                sf_obs,
-                ephemeris.skyfield_wrapper.ephemeris["sun"],
+            times, rises = chime.rise_set_times(
+                skyfield_wrapper.ephemeris["sun"],
                 start_time,
                 end_time,
                 diameter=-10,
@@ -399,9 +395,9 @@ class RingMapPlot(HeatMapPlot, Reader):
             sun_set = 0
             for t, r in zip(times, rises):
                 if r:
-                    sun_rise = (self._chime_obs.unix_to_lsd(t) % 1) * 360
+                    sun_rise = (unix_to_csd(t) % 1) * 360
                 else:
-                    sun_set = (self._chime_obs.unix_to_lsd(t) % 1) * 360
+                    sun_set = (unix_to_csd(t) % 1) * 360
 
             # Highlight the day time data
             opts = {
