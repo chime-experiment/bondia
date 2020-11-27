@@ -15,7 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 class BondiaGui(param.Parameterized):
-    def __init__(self, template, width_drawer_widgets, data_loader, config_plots):
+    def __init__(
+        self, template, width_drawer_widgets, data_loader, config_plots, root_url
+    ):
         self._width_drawer_widgets = width_drawer_widgets
         self._template = template
         self._plot = {}
@@ -23,6 +25,7 @@ class BondiaGui(param.Parameterized):
         self._opinion_buttons = {}
         self._data = data_loader
         self._config_plots = config_plots
+        self._root_url = root_url
         self._opinion_header = pn.pane.Markdown(
             "####Opinion", width=width_drawer_widgets
         )
@@ -323,5 +326,6 @@ class BondiaGui(param.Parameterized):
         template.add_variable("app_title", "BON DIA")
         template.add_variable("username", self.current_user)
         template.add_variable("num_unvalidated", 19)
+        template.add_variable("root_url", self._root_url)
 
         return self.populate_template(template)
