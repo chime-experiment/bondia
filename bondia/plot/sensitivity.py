@@ -11,7 +11,7 @@ from matplotlib import cm as matplotlib_cm
 from caput.config import Reader, Property
 from ch_util.ephemeris import chime, csd, skyfield_wrapper, csd_to_unix, unix_to_csd
 
-from .heatmap import HeatMapPlot
+from .heatmap import RaHeatMapPlot
 
 from ..util.exception import DataError
 from ..util.plotting import hv_image_with_gaps
@@ -19,7 +19,7 @@ from ..util.plotting import hv_image_with_gaps
 logger = logging.getLogger(__name__)
 
 
-class SensitivityPlot(HeatMapPlot, Reader):
+class SensitivityPlot(RaHeatMapPlot, Reader):
     """
     Attributes
     ----------
@@ -54,7 +54,9 @@ class SensitivityPlot(HeatMapPlot, Reader):
         self.data = data
         self.selections = None
 
-        HeatMapPlot.__init__(self, "Sensitivity", activated=True, **params)
+        RaHeatMapPlot.__init__(
+            self, "Sensitivity", activated=True, config=config, **params
+        )
         self.height = 600
         self.read_config(config)
         self.logarithmic_colorscale = True
@@ -84,6 +86,8 @@ class SensitivityPlot(HeatMapPlot, Reader):
         "polarization",
         "mark_day_time",
         "mask_rfi",
+        "flag_mask",
+        "flags",
         "height",
     )
     def view(self):
@@ -116,6 +120,12 @@ class SensitivityPlot(HeatMapPlot, Reader):
         else:
             sel_pol = np.where(sens_container.index_map["pol"] == self.polarization)[0]
             sens = np.squeeze(sens_container.measured[:, sel_pol])
+
+        if self.flag_mask:
+            sens = np.where(self._flags_mask(sens_container.time), np.nan, sens)
+
+        # Set flagged data to nan
+        sens = np.where(sens == 0, np.nan, sens)
 
         if self.mask_rfi:
             try:
