@@ -35,12 +35,6 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
     xlim = (0, 360)
     zlim = (0.01, 0.1)
 
-    # Config
-    _cache_reset_time = Property(
-        proptype=int, key="flag_cache_reset_seconds", default=86400
-    )
-    _cache_flags = Property(proptype=bool, key="cache_flags", default=False)
-
     # parameters
     # Hide lsd, revision selectors by setting precedence < 0
     lsd = param.Selector(precedence=-1)
