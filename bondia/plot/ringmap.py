@@ -193,7 +193,7 @@ class RingMapPlot(RaHeatMapPlot, Reader):
         if self.weight_mask:
             try:
                 rms = np.squeeze(container.rms[sel_pol, sel_freq])
-            except IndexError as err:
+            except IndexError:
                 logger.error(
                     f"rms dataset of ringmap file for rev {self.revision} lsd "
                     f"{self.lsd} is missing [{sel_pol}, {sel_freq}] (polarization, "
