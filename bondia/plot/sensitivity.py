@@ -116,7 +116,7 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
             sens = np.squeeze(sens_container.measured[:, sel_pol])
 
         if self.flag_mask:
-            sens = np.where(self._flags_mask(sens_container.time).T, np.nan, sens)
+            sens = np.where(self._flags_mask(index_map_ra).T, np.nan, sens)
 
         # Set flagged data to nan
         sens = np.where(sens == 0, np.nan, sens)
