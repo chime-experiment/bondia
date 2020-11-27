@@ -98,6 +98,8 @@ class RingMapPlot(HeatMapPlot, Reader):
         # transpose by default
         self.transpose = True
 
+        self.height = 800
+
         self.read_config(config)
 
     def _finalise_config(self):
@@ -194,6 +196,7 @@ class RingMapPlot(HeatMapPlot, Reader):
         "weight_mask_threshold",
         "flag_mask",
         "flags",
+        "height",
     )
     def view(self):
         if self.lsd is None:
@@ -423,7 +426,7 @@ class RingMapPlot(HeatMapPlot, Reader):
 
         img.opts(
             # Fix height, but make width responsive
-            height=500,
+            height=self.height,
             responsive=True,
             shared_axes=True,
         )

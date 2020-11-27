@@ -1,12 +1,15 @@
 from panel import Row, Param
+import param
 
 
-class BondiaPlot:
+class BondiaPlot(param.Parameterized):
     def __init__(self, name: str, activated: bool = True):
         self._name = name
         self._id = name.lower().replace(" ", "_")
         self._panel_row_active = activated
         self._panel_row = None
+
+    height = param.Integer(500, bounds=(0, 10000))
 
     @property
     def id(self):
