@@ -366,6 +366,7 @@ class RingMapPlot(RaHeatMapPlot, Reader):
             height=self.height,
             responsive=True,
             shared_axes=True,
+            bgcolor="lightgray",
         )
 
         return panel.Row(img, width_policy="max")
