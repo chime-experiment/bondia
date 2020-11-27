@@ -15,15 +15,14 @@ from ch_pipeline.core import containers as ccontainers
 from ch_util import tools
 from ch_util.ephemeris import csd_to_unix, unix_to_csd, skyfield_wrapper, chime
 
-from .heatmap import HeatMapPlot
+from .heatmap import RaHeatMapPlot
 
 from ..util.exception import DataError
-from ..util.flags import get_flags_cached, get_flags
 
 logger = logging.getLogger(__name__)
 
 
-class RingMapPlot(HeatMapPlot, Reader):
+class RingMapPlot(RaHeatMapPlot, Reader):
     """
     Attributes
     ----------
@@ -41,10 +40,6 @@ class RingMapPlot(HeatMapPlot, Reader):
 
     # Config
     _stack_path = Property(proptype=str, key="stack")
-    _cache_reset_time = Property(
-        proptype=int, key="flag_cache_reset_seconds", default=86400
-    )
-    _cache_flags = Property(proptype=bool, key="cache_flags", default=False)
 
     # Parameters
     # Hide lsd, revision selectors by setting precedence < 0
@@ -59,41 +54,12 @@ class RingMapPlot(HeatMapPlot, Reader):
     crosstalk_removal = param.Boolean(default=True)
     weight_mask = param.Boolean(default=True)
     weight_mask_threshold = param.Number(default=10, bounds=(0, 100))
-    flag_mask = param.Boolean(default=True)
-    flags = param.ListSelector(
-        objects=[
-            "bad_calibration_fpga_restart",
-            "globalflag",
-            "acjump",
-            "acjump_sd",
-            "rain",
-            "rain_sd",
-            "bad_calibration_acquisition_restart",
-            "misc",
-            "rain1mm",
-            "rain1mm_sd",
-            "srs/bad_ringmap_broadband",
-            "bad_calibration_gains",
-            "snow",
-            "decorrelated_cylinder",
-        ],
-        default=[
-            "bad_calibration_fpga_restart",
-            "acjump_sd",
-            "bad_calibration_acquisition_restart",
-            "rain1mm_sd",
-            "srs/bad_ringmap_broadband",
-            "bad_calibration_gains",
-            "snow",
-            "decorrelated_cylinder",
-        ],
-    )
 
     def __init__(self, data, config, **params):
         self.data = data
         self.selections = None
 
-        HeatMapPlot.__init__(self, "Ringmap", activated=True, **params)
+        RaHeatMapPlot.__init__(self, "Ringmap", activated=True, config=config, **params)
 
         # transpose by default
         self.transpose = True
@@ -171,17 +137,6 @@ class RingMapPlot(HeatMapPlot, Reader):
     def update_weight_threshold_selection(self):
         self.param["weight_mask_threshold"].constant = not self.weight_mask
 
-    @property
-    def param_control(self):
-        p = panel.param.Param(
-            self.param,
-            expand_button=False,
-            widgets={
-                "flags": panel.widgets.MultiChoice,
-            },
-        )
-        return panel.Column(p)
-
     @param.depends(
         "transpose",
         "logarithmic_colorscale",
@@ -233,22 +188,7 @@ class RingMapPlot(HeatMapPlot, Reader):
             rmap = np.squeeze(container.map[sel_beam, sel_pol, sel_freq])
 
         if self.flag_mask:
-            if self._cache_flags:
-                flag_time_spans = get_flags_cached(self.flags, self._cache_reset_time)
-            else:
-                flag_time_spans = get_flags(
-                    self.flags,
-                    csd_to_unix(self.lsd.lsd),
-                    csd_to_unix(self.lsd.lsd + 1),
-                )
-            csd_arr = self.lsd.lsd + container.index_map["ra"] / 360.0
-            flag_mask = np.zeros_like(csd_arr, dtype=np.bool)
-            for type_, ca, cb in flag_time_spans:
-                flag_mask[
-                    (csd_arr > unix_to_csd(ca)) & (csd_arr < unix_to_csd(cb))
-                ] = True
-            flag_mask = flag_mask[:, np.newaxis]
-            rmap = np.where(flag_mask, np.nan, rmap)
+            rmap = np.where(self._flags_mask(container.index_map["ra"]), np.nan, rmap)
 
         if self.weight_mask:
             try:
@@ -261,14 +201,11 @@ class RingMapPlot(HeatMapPlot, Reader):
                 )
                 self.weight_mask = False
             else:
-                if self.polarization == self.mean_pol_text:
-                    rms = np.nanmean(rms, axis=0)
-                weight_mask = tools.invert_no_zero(rms) < self.weight_mask_threshold
-                weight_mask = weight_mask[:, np.newaxis]
-                rmap = np.where(weight_mask, np.nan, rmap)
+                rmap = np.where(self._weights_mask(rms), np.nan, rmap)
 
         # Set flagged data to nan
         rmap = np.where(rmap == 0, np.nan, rmap)
+
         if self.crosstalk_removal:
             # The mean of an all-nan slice (masked?) is nan. We don't need a warning about that.
             with warnings.catch_warnings():
@@ -432,3 +369,9 @@ class RingMapPlot(HeatMapPlot, Reader):
         )
 
         return panel.Row(img, width_policy="max")
+
+    def _weights_mask(self, rms):
+        if self.polarization == self.mean_pol_text:
+            rms = np.nanmean(rms, axis=0)
+        weight_mask = tools.invert_no_zero(rms) < self.weight_mask_threshold
+        return weight_mask[:, np.newaxis]
