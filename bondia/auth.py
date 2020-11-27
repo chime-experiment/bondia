@@ -14,7 +14,6 @@ next_url = os.getenv("BONDIA_NEXT_URL", "/")
 
 # If this is done by defining login_url directly, tornado is inconsistent with the root url.
 def get_login_url(request):
-    root_url = os.getenv("BONDIA_ROOT_URL", "")
     return root_url + "/login"
 
 
@@ -56,10 +55,11 @@ class CustomLoginHandler(tornado.web.RequestHandler):
         return user
 
 
-logout_url = os.getenv("BONDIA_LOGOUT_URL", "/logout")
+def get_logout_url(request):
+    return root_url + "/logout"
 
 
-class LogoutHandler(tornado.web.RequestHandler):
+class CustomLogoutHandler(tornado.web.RequestHandler):
     def get(self):
         self.clear_cookie("user")
         self.redirect(os.getenv("BONDIA_NEXT_URL", "/"))
