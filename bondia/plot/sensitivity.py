@@ -55,6 +55,7 @@ class SensitivityPlot(HeatMapPlot, Reader):
         self.selections = None
 
         HeatMapPlot.__init__(self, "Sensitivity", activated=True, **params)
+        self.height = 600
         self.read_config(config)
         self.logarithmic_colorscale = True
 
@@ -83,6 +84,7 @@ class SensitivityPlot(HeatMapPlot, Reader):
         "polarization",
         "mark_day_time",
         "mask_rfi",
+        "height",
     )
     def view(self):
         if self.lsd is None:
@@ -214,7 +216,7 @@ class SensitivityPlot(HeatMapPlot, Reader):
 
         img.opts(
             # Fix height, but make width responsive
-            height=500,
+            height=self.height,
             responsive=True,
             bgcolor="lightgray",
             shared_axes=True,

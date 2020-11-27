@@ -40,6 +40,7 @@ class DelaySpectrumPlot(HeatMapPlot):
         # set default values
         self.transpose = True
         self.logarithmic_colorscale = True
+        self.height = 400
 
     @param.depends(
         "lsd",
@@ -48,6 +49,7 @@ class DelaySpectrumPlot(HeatMapPlot):
         "serverside_rendering",
         "colormap_range",
         "helper_lines",
+        "height",
     )
     def view(self):
         if self.lsd is None:
@@ -173,7 +175,7 @@ class DelaySpectrumPlot(HeatMapPlot):
                     )
             img.opts(
                 # Fix height, but make width responsive
-                height=500,
+                height=self.height,
                 responsive=True,
                 shared_axes=False,
             )
