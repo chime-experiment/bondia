@@ -43,6 +43,7 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
     polarization = param.ObjectSelector()
     mark_day_time = param.Boolean(default=True)
     mask_rfi = param.Boolean(default=True)
+    divide_by_estimate = param.Boolean(default=False)
 
     def __init__(self, data, config, **params):
         self.data = data
@@ -51,7 +52,7 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
         RaHeatMapPlot.__init__(
             self, "Sensitivity", activated=True, config=config, **params
         )
-        self.height = 600
+        self.height = 650
         self.read_config(config)
         self.logarithmic_colorscale = True
 
@@ -83,6 +84,7 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
         "flag_mask",
         "flags",
         "height",
+        "divide_by_estimate",
     )
     def view(self):
         if self.lsd is None:
@@ -130,6 +132,13 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
                 )
             rfi = np.squeeze(rfi_container.mask[:])
             sens *= np.where(rfi, np.nan, 1)
+
+        if self.divide_by_estimate:
+            estimate = np.squeeze(sens_container.radiometer[:, sel_pol])
+            if self.polarization == self.mean_pol_text:
+                estimate = np.squeeze(np.nanmean(estimate, axis=1))
+            estimate = np.where(estimate == 0, np.nan, estimate)
+            sens = sens / estimate
 
         if self.transpose:
             sens = sens.T
