@@ -54,6 +54,7 @@ class RingMapPlot(RaHeatMapPlot, Reader):
     crosstalk_removal = param.Boolean(default=True)
     weight_mask = param.Boolean(default=True)
     weight_mask_threshold = param.Number(default=10, bounds=(0, 100))
+    intercylinder_only = param.Boolean(default=False)
 
     def __init__(self, data, config, **params):
         self.data = data
@@ -152,12 +153,17 @@ class RingMapPlot(RaHeatMapPlot, Reader):
         "flag_mask",
         "flags",
         "height",
+        "intercylinder_only",
     )
     def view(self):
         if self.lsd is None:
             return panel.pane.Markdown("No data selected.")
         try:
-            container = self.data.load_file(self.revision, self.lsd, "ringmap")
+            if self.intercylinder_only:
+                name = "ringmap_intercyl"
+            else:
+                name = "ringmap"
+            container = self.data.load_file(self.revision, self.lsd, name)
         except DataError as err:
             return panel.pane.Markdown(
                 f"Error: {str(err)}. Please report this problem."
