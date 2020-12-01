@@ -73,14 +73,25 @@ for rev_dir in rev_dirs:
                 logger.error(f"Tried to add {lsd} twice")
                 sys.exit(1)
 
+            ringmap_freqs = (400, 401)
+            ringmap_pols = (0, 3)
             process(
                 lsd_dir,
                 "ringmap",
                 "ringmap_lsd_*.h5",
                 f"ringmap_validation_freqs_lsd",
                 ccontainers.RingMap,
-                freq_sel=slice(400, 401),
-                pol_sel=[0, 3],
+                freq_sel=ringmap_freqs,
+                pol_sel=ringmap_pols,
+            )
+            process(
+                lsd_dir,
+                "ringmap_intercyl",
+                "ringmap_intercyl_lsd_*.h5",
+                f"ringmap_intercyl_validation_freqs_lsd",
+                ccontainers.RingMap,
+                freq_sel=ringmap_freqs,
+                pol_sel=ringmap_pols,
             )
             process(
                 lsd_dir,
