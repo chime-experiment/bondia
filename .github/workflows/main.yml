@@ -83,6 +83,13 @@ jobs:
         token: ${{ secrets.ACCESS_TOKEN }}
         path: "ch_util"
 
+    - name: Clone ch_pipeline from private repo
+      uses: actions/checkout@v2
+      with:
+        repository: chime-experiment/ch_pipeline
+        token: ${{ secrets.ACCESS_TOKEN }}
+        path: "ch_pipeline"
+
     - uses: actions/cache@v2
       with:
         path: ~/.cache/pip
@@ -90,39 +97,13 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
 
-    - name: Install wheel
+    - name: Install wheel and future
       run: |
-        pip install wheel
+        pip install wheel future
 
-    - name: Install chimedb
+    - name: Install python packages from private repos
       run: |
-        cd chimedb
-        pip install .
-        cd ..
-
-    - name: Install chimedb_di
-      run: |
-        cd chimedb_di
-        pip install .
-        cd ..
-
-    - name: Install chimedb_dataflag
-      run: |
-        cd chimedb_dataflag
-        pip install .
-        cd ..
-
-    - name: Install chimedb_config
-      run: |
-        cd chimedb_config
-        pip install .
-        cd ..
-
-    - name: Install ch_util
-      run: |
-        cd ch_util
-        pip install .
-        cd ..
+        pip install ./ch_util ./chimedb ./chimedb_di ./chimedb_dataflag ./chimedb_config ./ch_pipeline
 
     - name: Remove cloned repositories
       run: |

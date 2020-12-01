@@ -1,3 +1,56 @@
+# [0.3.0](https://github.com/chime-experiment/bondia/compare/v0.2.0...v0.3.0) (2020-11-04)
+
+
+### Bug Fixes
+
+* **data:** don't accept days with missing plots ([6b4458a](https://github.com/chime-experiment/bondia/commit/6b4458a986bea16dfc2852f961d28519bb69031a)), closes [#63](https://github.com/chime-experiment/bondia/issues/63)
+* **data:** raise DataError if file not found ([80dcbd5](https://github.com/chime-experiment/bondia/commit/80dcbd5d116cff02587e9e351f9449ede1913d88))
+* **data:** raise DataError if trying to load nonexistant data ([f1cc484](https://github.com/chime-experiment/bondia/commit/f1cc4846a3ae571036d08eddc862a3465c5c260a))
+* **data:** Skip non-lsd dirs ([29b046e](https://github.com/chime-experiment/bondia/commit/29b046e539bb72c3bf8ca1dde01bead924a7ad44))
+* **data:** typo in debug log ([ecf17ec](https://github.com/chime-experiment/bondia/commit/ecf17ecc70f01faad75f1b5a285cfea7f19ab96a))
+* **delayspectrum:** copy cmap to get rid of mpl warning ([e812e49](https://github.com/chime-experiment/bondia/commit/e812e49bb1d7a1015c54865c9e6b9206d77469ef))
+* **delayspectrum:** swap axis names when transposing ([d63fc94](https://github.com/chime-experiment/bondia/commit/d63fc94779420922d85f8fe07e5e4f44353f770e))
+* **gui:** get user name from secure cookie ([33044f8](https://github.com/chime-experiment/bondia/commit/33044f8a1b28be9266d51d82c64e738e5b986597)), closes [#37](https://github.com/chime-experiment/bondia/issues/37)
+* **gui:** no day value set on start ([87db63d](https://github.com/chime-experiment/bondia/commit/87db63de4b71993c3190f7e60088cc08c84a0107))
+* **gui:** plot order in set gets scrambled ([be956e4](https://github.com/chime-experiment/bondia/commit/be956e447cae55289ec7c11ef4cf8f489e99295e))
+* **gui:** Toggle buttons were assigned to wrong plots ([3aeb40a](https://github.com/chime-experiment/bondia/commit/3aeb40ad0bcec9e3368412a1b1bbf3edc6da0304))
+* **heatmap:** import datashade after start to make --num_procs work ([9669ead](https://github.com/chime-experiment/bondia/commit/9669ead3b4dfc417fd35978a2509323e99cfddc0))
+* **heatmap:** set transpose default to False ([9e41195](https://github.com/chime-experiment/bondia/commit/9e4119510d221bfd4f47eb88a9675ee64f58256e)), closes [#57](https://github.com/chime-experiment/bondia/issues/57)
+* **server:** load template after config ([75f03c8](https://github.com/chime-experiment/bondia/commit/75f03c8c449f0a4621bfd02f0cd3c482547362cb))
+* **template:** Menu button wasn't displayed at all ([6d3ecae](https://github.com/chime-experiment/bondia/commit/6d3ecaea48ed38822748b9851e73e2f810b1b1f6))
+
+
+### Features
+
+* **config:** add logging config ([1aa53ef](https://github.com/chime-experiment/bondia/commit/1aa53efd997d83f35847fb0bd5212db71b48b36a))
+* **data:** periodically re-index files ([5470e1a](https://github.com/chime-experiment/bondia/commit/5470e1a9be39245c4864dd64756bd1bbbcd75313)), closes [#24](https://github.com/chime-experiment/bondia/issues/24)
+* **delayspectrum:** arrange plots in single row ([727f254](https://github.com/chime-experiment/bondia/commit/727f2546465c66869e5677fb46d9b5395a34408e)), closes [#34](https://github.com/chime-experiment/bondia/issues/34)
+* **delayspectrum:** make axes of subplots independent ([4b8c327](https://github.com/chime-experiment/bondia/commit/4b8c3273af2649e012de9d3eee77bcb4bce81b5e))
+* **delayspectrum:** optimize plot layout ([d06e17c](https://github.com/chime-experiment/bondia/commit/d06e17cab33f549694abdad3b9e77a1c1b48b454))
+* **flags:** default uncached flag fetching ([7d0a3ac](https://github.com/chime-experiment/bondia/commit/7d0a3ac6b79937752c4ae7cff221bfd97e47d2a1))
+* **gui:** add indicator for when page loading ([15264b5](https://github.com/chime-experiment/bondia/commit/15264b5b80c921c633132fa8007004fb89f82b33)), closes [#65](https://github.com/chime-experiment/bondia/issues/65)
+* **gui:** add option to hide days with opinion ([3935db4](https://github.com/chime-experiment/bondia/commit/3935db4bf8489dcbaa62df0b93c0a720e5c1745f)), closes [#65](https://github.com/chime-experiment/bondia/issues/65)
+* **gui:** describe displayed data in a title ([84a87d9](https://github.com/chime-experiment/bondia/commit/84a87d9002304010e30683a46be7e640635079c6)), closes [#33](https://github.com/chime-experiment/bondia/issues/33)
+* **gui:** opinion buttons insert into chimedb ([1f92c75](https://github.com/chime-experiment/bondia/commit/1f92c75b58ef05f95e70a3ff7902331aff0073cf))
+* **gui:** swap plot order to fit them tighter ([b3437be](https://github.com/chime-experiment/bondia/commit/b3437be14deb2bd24c182f1f21e088df6577931d))
+* **gui:** use alert widget to give opinion click feedback ([a91bf3b](https://github.com/chime-experiment/bondia/commit/a91bf3b0646e2443a51f18b767ad53dc78bb8c83))
+* **opinion:** add notes text input ([f841c55](https://github.com/chime-experiment/bondia/commit/f841c5548a6ef0b6b69c31a116d6dbcf412849d7)), closes [#64](https://github.com/chime-experiment/bondia/issues/64)
+* **opinion:** choose next day closeby after opinion inserted ([f099f5b](https://github.com/chime-experiment/bondia/commit/f099f5bcf1e7f67db112ecc3c7b9a3f36337ffd8)), closes [#62](https://github.com/chime-experiment/bondia/issues/62)
+* **plot:** pass config to plot ([174c536](https://github.com/chime-experiment/bondia/commit/174c5366bc44f51e5a9a2356a45660e6b29ab520))
+* **requirements:** bump bokeh version to 2.2.1 ([57848eb](https://github.com/chime-experiment/bondia/commit/57848eb96adac05a02bbf75f81712975cb56a074))
+* **ringmap:** add ringmap plot ([97e19cf](https://github.com/chime-experiment/bondia/commit/97e19cf8e392a224902ecde6b39cbc1e303a70aa))
+* **script:** add option --chimedb-enable-test ([4b28836](https://github.com/chime-experiment/bondia/commit/4b28836b73721f7c4217ebac34e23bdb13c7a537))
+* **sensitivity:** Add sensitivity plot ([67402cb](https://github.com/chime-experiment/bondia/commit/67402cb7f1d254d4d2c05a6911a18b65c640d27a))
+* **template:** add mdl w/o tabs ([d5365f5](https://github.com/chime-experiment/bondia/commit/d5365f56dfd3562e4ab3ee7b9c910e5c3ae138de))
+* **templates:** add template mdl ([28cad5e](https://github.com/chime-experiment/bondia/commit/28cad5e73458f7bc8e5036a36e78152d10092cdb))
+
+
+### Performance Improvements
+
+* **server:** open db connection on startup ([4e648c6](https://github.com/chime-experiment/bondia/commit/4e648c68e98b7160a98c302386d9b56845b69adb))
+
+
+
 ### [0.2.0]  (2020-07-23)
 
 
