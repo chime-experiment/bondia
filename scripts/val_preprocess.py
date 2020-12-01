@@ -73,8 +73,8 @@ for rev_dir in rev_dirs:
                 logger.error(f"Tried to add {lsd} twice")
                 sys.exit(1)
 
-            ringmap_freqs = (400, 401)
-            ringmap_pols = (0, 3)
+            ringmap_freqs = slice(399, 477, 969)
+            ringmap_pols = [0, 3]
             process(
                 lsd_dir,
                 "ringmap",
