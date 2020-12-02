@@ -13,10 +13,23 @@ from .plot.sensitivity import SensitivityPlot
 
 logger = logging.getLogger(__name__)
 
+options_decision = DataFlagOpinion.decision.enum_list
+
 
 class BondiaGui(param.Parameterized):
+
+    lsd = param.ObjectSelector(label="Select Sidereal Day")
+    revision = param.ObjectSelector(label="Select Data Revision")
+    filter_lsd = param.Boolean(default=False, label="Hide days I have voted for")
+
     def __init__(
-        self, template, width_drawer_widgets, data_loader, config_plots, root_url
+        self,
+        template,
+        width_drawer_widgets,
+        data_loader,
+        config_plots,
+        root_url,
+        **params,
     ):
         self._width_drawer_widgets = width_drawer_widgets
         self._template = template
@@ -29,19 +42,12 @@ class BondiaGui(param.Parameterized):
         self._opinion_header = pn.pane.Markdown(
             "####Opinion", width=width_drawer_widgets
         )
-        self._day_filter_opinion = pn.widgets.Checkbox(
-            name="Hide days I have voted for", disabled=self.current_user is None
-        )
         self._opinion_notes = pn.widgets.TextAreaInput(
             placeholder="Before inserting or changing your opinion you can type a comment about it here.",
             max_length=5000,
             width=width_drawer_widgets,
             height=100,
         )
-
-        # TODO: remove after https://github.com/holoviz/panel/commit/203a16c10cb8fd4c55ec7887fade561ecc222938
-        pn.pane.Alert.priority = 0
-        pn.pane.Alert._rename = dict(pn.pane.Markdown._rename, alert_type=None)
 
         # TODO: once https://github.com/holoviz/panel/issues/1723 fixed, set width
         # width=width_drawer_widgets, sizing_mode="fixed"
@@ -51,34 +57,72 @@ class BondiaGui(param.Parameterized):
 
         self._day_stats = pn.Row(pn.Column(), pn.Column())
 
-    def _choose_lsd(self):
-        if hasattr(self, "day_selector"):
-            selected_day = self.day_selector.value
-        else:
-            selected_day = None
+        param.Parameterized.__init__(self, **params)
 
-        days = self._data.days(self.rev_selector.value)
+        # Load revision, lsd selectors and set initial values
+        self.param["revision"].objects = list(self._data.revisions)
+        self.revision = self._data.latest_revision
+        self.param["lsd"].objects = list(self._data.days(self.revision))
+        self.lsd = self._choose_lsd()
+
+    @param.depends("revision", "filter_lsd", watch=True)
+    def update_days(self):
+        """Update days depending on selected revision."""
+        if self.filter_lsd and self.current_user is not None:
+            self.param["lsd"].objects = opinion.get_days_without_opinion(
+                list(self._data.days(self.revision)),
+                self.revision,
+                self.current_user,
+            )
+        else:
+            self.param["lsd"].objects = list(self._data.days(self.revision))
+
+        if self.param["lsd"].objects:
+            self.lsd = self._choose_lsd()
+
+    @param.depends("lsd")
+    def data_description(self):
+        """A title over the plots showing the selected day and rev (and keep it updated)"""
+        return pn.pane.Markdown(f"<h4>LSD {self.lsd} - {self.revision}</h4>", width=800)
+
+    @param.depends("lsd", watch=True)
+    def update_data_description_day(self):
+        # Update buttons when opinion given
+        self._update_opinion_buttons()
+
+        # Update opinion warning and buttons when LSD is changed
+        self._update_opinion_warning()
+
+        # Link selected day, revision to plots
+        for plot in self._plot:
+            plot.lsd = self.lsd
+            plot.revision = self.revision
+
+    def _choose_lsd(self):
+        selected_day = getattr(self, "lsd", None)
+
+        days = self._data.days(self.revision)
         if self.current_user is None:
             return days[-1]
         day = opinion.get_day_without_opinion(
-            selected_day, days, self.rev_selector.value, self.current_user
+            selected_day, days, self.revision, self.current_user
         )
         logger.debug(f"Chose new LSD to display: {day}.")
 
         # If day doesn't change, the opinion UI is not updated. So we do it here...
-        if hasattr(self, "day_selector") and day == selected_day:
-            self.day_selector.param.trigger("value")
+        if hasattr(self, "lsd") and day == selected_day:
+            self.param["lsd"].trigger("value")
 
         return day
 
-    def _update_opinion_warning(self, target, event):
+    def _update_opinion_warning(self):
         self._opinion_warning.alert_type = "primary"
         if self.current_user is None:
             self._opinion_warning.object = """
             Log in to give your opinion
             """
             self._opinion_warning.height = 80
-        elif opinion.get(event.new, self.rev_selector.value, self.current_user):
+        elif opinion.get(self.lsd, self.revision, self.current_user):
             self._opinion_warning.object = """
             **You already voted on the data quality of this day.** Choose a different option to change your decision.
             """
@@ -90,8 +134,8 @@ class BondiaGui(param.Parameterized):
         self._opinion_notes.value = None
 
         # Also update day stats here
-        if self.day_selector.value is not None:
-            num_opinions = opinion.get_opinions_for_day(self.day_selector.value)
+        if self.lsd is not None:
+            num_opinions = opinion.get_opinions_for_day(self.lsd)
             num_opinions.update({"total": sum(num_opinions.values())})
             self._day_stats[0] = hv.Table(
                 (list(num_opinions.keys()), list(num_opinions.values())),
@@ -111,12 +155,18 @@ class BondiaGui(param.Parameterized):
             label="Highscore",
         )
 
-    def _update_opinion_button(self, lsd, button):
-        self._opinion_buttons[
-            button
-        ].disabled = self.current_user is None or button == opinion.get(
-            lsd, self.rev_selector.value, self.current_user
-        )
+    def _update_opinion_buttons(self):
+        for decision in options_decision:
+            try:
+                self._opinion_buttons[
+                    decision
+                ].disabled = self.current_user is None or decision == opinion.get(
+                    self.lsd, self.revision, self.current_user
+                )
+            except KeyError as key:
+                logger.debug(
+                    f"Failure setting 'disabled' of opinion button: {key} button doesn't exist yet"
+                )
 
     @pn.depends(pn.state.param.busy)
     def _indicator(self, busy=False):
@@ -130,63 +180,27 @@ class BondiaGui(param.Parameterized):
             RingMapPlot(self._data, self._config_plots.get("ringmap", {})),
         ]
 
-        # Load revision, lsd selectors and set initial values
-        self.rev_selector = pn.widgets.Select(
-            options=list(self._data.revisions),
-            width=self._width_drawer_widgets,
-            name="Select Data Revision",
-            value=self._data.latest_revision,
-        )
-        self.day_selector = pn.widgets.Select(
-            options=list(self._data.days(self.rev_selector.value)),
-            width=self._width_drawer_widgets,
-            name="Select Sidereal Day",
-            value=self._choose_lsd(),
-        )
-
-        def update_days(day_selector, event):
-            """Update days depending on selected revision."""
-            if self._day_filter_opinion.value and self.current_user is not None:
-                day_selector.options = opinion.get_days_without_opinion(
-                    list(self._data.days(self.rev_selector.value)),
-                    self.rev_selector.value,
-                    self.current_user,
-                )
-            else:
-                day_selector.options = list(self._data.days(self.rev_selector.value))
-
-            if self.day_selector.options:
-                day_selector.value = self._choose_lsd()
-
-        # Add a title over the plots showing the selected day and rev (and keep it updated)
-        data_description = pn.pane.Markdown(
-            f"<h4>LSD {self.day_selector.value} - {self.rev_selector.value}</h4>",
-            width=800,
-        )
-
-        def update_data_description_day(data_description, event):
-            data_description.object = (
-                f"<h4>LSD {event.new} - {self.rev_selector.value}</h4>"
-            )
-
-        # It's enough to link the day selector to the description, since the revision selector
-        # already is linked to the day selector in update_days.
-        self.day_selector.link(
-            data_description, callbacks={"value": update_data_description_day}
-        )
-
         # Checkbox to show only days w/o opinion
-        template.add_panel("day_filter_opinion_checkbox", self._day_filter_opinion)
-        self._day_filter_opinion.link(
-            self.day_selector, callbacks={"value": update_days}
-        )
+        template.add_panel("day_filter_opinion_checkbox", self.param["filter_lsd"])
 
         # Fill the template with components
-        template.add_panel("data_description", data_description)
-        template.add_panel("data_description1", data_description)
-        template.add_panel("data_description2", data_description)
-        template.add_panel("day_selector", self.day_selector)
-        template.add_panel("rev_selector", self.rev_selector)
+        template.add_panel("data_description", self.data_description)
+        template.add_panel("data_description1", self.data_description)
+        template.add_panel("data_description2", self.data_description)
+        template.add_panel(
+            "day_selector",
+            pn.Param(
+                self.param["lsd"],
+                widgets={"lsd": {"width": self._width_drawer_widgets}},
+            ),
+        )
+        template.add_panel(
+            "rev_selector",
+            pn.Param(
+                self.param["revision"],
+                widgets={"revision": {"width": self._width_drawer_widgets}},
+            ),
+        )
 
         # Loading spinner
         template.add_panel("busy_indicator", pn.Column(self._indicator))
@@ -210,7 +224,8 @@ class BondiaGui(param.Parameterized):
             button_type="default",
             width=self._width_drawer_widgets,
         )
-        for decision in DataFlagOpinion.decision.enum_list:
+
+        for decision in options_decision:
             # Add functionality to opinion button
             self._opinion_buttons[decision].param.watch(
                 lambda event, d=decision: self._click_opinion(event, d), "clicks"
@@ -219,33 +234,14 @@ class BondiaGui(param.Parameterized):
             # Add button to the template
             template.add_panel(f"opinion_{decision}", self._opinion_buttons[decision])
 
-            # Update buttons when opinion given
-            self.day_selector.link(
-                self._opinion_buttons[decision],
-                callbacks={
-                    "value": lambda target, event, d=decision: self._update_opinion_button(
-                        event.new, d
-                    )
-                },
-            )
-
-        # Update opinion warning and buttons when LSD is changed
-        self.day_selector.link(
-            self._opinion_warning, callbacks={"value": self._update_opinion_warning}
-        )
-
         template.add_panel("day_stats", self._day_stats)
 
         # Trigger opinion UI callbacks once now
-        self.day_selector.param.trigger("value")
+        self.param.trigger("lsd")
 
         for plot in self._plot:
-            plot.revision = self.rev_selector.value
-            plot.lsd = self.day_selector.value
-
-            # Link selected day, revision to plots
-            self.rev_selector.link(plot, value="revision")
-            self.day_selector.link(plot, value="lsd")
+            plot.revision = self.revision
+            plot.lsd = self.lsd
 
             # Fill in the plot selection toggle buttons
             self._toggle_plot[plot.id] = pn.widgets.Toggle(
@@ -278,11 +274,10 @@ class BondiaGui(param.Parameterized):
             template.add_panel(f"plot_{plot.id}", plot.panel_row)
             template.add_variable(f"title_{plot.id}", plot.name_)
 
-        self.rev_selector.link(self.day_selector, callbacks={"value": update_days})
         return template
 
     def _click_opinion(self, event, decision):
-        lsd = self.day_selector.value
+        lsd = self.lsd
         if lsd is None:
             self._opinion_warning.alert_type = "danger"
             self._opinion_warning.object = "No data selected."
@@ -297,23 +292,24 @@ class BondiaGui(param.Parameterized):
             opinion.insert(
                 self.current_user,
                 lsd,
-                self.rev_selector.value,
+                self.revision,
                 decision,
                 self._opinion_notes.value,
             )
         except BaseException as err:
             logger.error(
-                f"Failure inserting opinion for user {self.current_user}, revision {self.rev_selector.value}, "
+                f"Failure inserting opinion for user {self.current_user}, revision {self.revision}, "
                 f"LSD {lsd}: {decision} ({err})"
             )
             self._opinion_warning.alert_type = "danger"
             self._opinion_warning.object = (
                 f"Error adding opinion for LSD {lsd.lsd}. Please report this problem."
             )
+            self._opinion_warning.height = 110
         else:
             self._opinion_warning.alert_type = "success"
             self._opinion_warning.object = f"Opinion added for LSD {lsd.lsd}"
-            self.day_selector.value = self._choose_lsd()
+            self.lsd = self._choose_lsd()
 
     @property
     def current_user(self):
