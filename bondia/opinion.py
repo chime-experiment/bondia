@@ -156,7 +156,13 @@ def get_day_without_opinion(last_selected_day, days, revision, user):
         return days[-1]
 
     # index of currently selected day
-    day_i = days.index(last_selected_day)
+    try:
+        day_i = days.index(last_selected_day)
+    except ValueError:
+        logger.debug(
+            f"Failed choosing a new day: {last_selected_day} not in options. Returning default..."
+        )
+        return days[-1]
 
     # look for a later day w/o opinion
     for i in range(day_i, len(days)):
