@@ -98,7 +98,7 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
 
         # Index map for ra (x-axis)
         sens_csd = csd(sens_container.time)
-        index_map_ra = (sens_csd % 1) * 360
+        index_map_ra = (sens_csd - self.lsd.lsd) * 360
         axis_name_ra = "RA [degrees]"
 
         # Index map for frequency (y-axis)
