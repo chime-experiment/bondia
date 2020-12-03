@@ -12,19 +12,17 @@ from matplotlib import cm as matplotlib_cm
 
 from caput.config import Reader, Property
 from ch_pipeline.core import containers as ccontainers
-from ch_util import ephemeris, tools
+from ch_util import tools
+from ch_util.ephemeris import csd_to_unix, unix_to_csd, skyfield_wrapper, chime
 
-from .heatmap import HeatMapPlot
+from .heatmap import RaHeatMapPlot
 
-# TODO: the ephemeris module will get moved to caput soon
-from ..util.ephemeris import source_transit, source_rise_set
 from ..util.exception import DataError
-from ..util.flags import get_flags_cached, get_flags
 
 logger = logging.getLogger(__name__)
 
 
-class RingMapPlot(HeatMapPlot, Reader):
+class RingMapPlot(RaHeatMapPlot, Reader):
     """
     Attributes
     ----------
@@ -42,10 +40,6 @@ class RingMapPlot(HeatMapPlot, Reader):
 
     # Config
     _stack_path = Property(proptype=str, key="stack")
-    _cache_reset_time = Property(
-        proptype=int, key="flag_cache_reset_seconds", default=86400
-    )
-    _cache_flags = Property(proptype=bool, key="cache_flags", default=False)
 
     # Parameters
     # Hide lsd, revision selectors by setting precedence < 0
@@ -60,45 +54,18 @@ class RingMapPlot(HeatMapPlot, Reader):
     crosstalk_removal = param.Boolean(default=True)
     weight_mask = param.Boolean(default=True)
     weight_mask_threshold = param.Number(default=10, bounds=(0, 100))
-    flag_mask = param.Boolean(default=True)
-    flags = param.ListSelector(
-        objects=[
-            "bad_calibration_fpga_restart",
-            "globalflag",
-            "acjump",
-            "acjump_sd",
-            "rain",
-            "rain_sd",
-            "bad_calibration_acquisition_restart",
-            "misc",
-            "rain1mm",
-            "rain1mm_sd",
-            "srs/bad_ringmap_broadband",
-            "bad_calibration_gains",
-            "snow",
-            "decorrelated_cylinder",
-        ],
-        default=[
-            "bad_calibration_fpga_restart",
-            "acjump_sd",
-            "bad_calibration_acquisition_restart",
-            "rain1mm_sd",
-            "srs/bad_ringmap_broadband",
-            "bad_calibration_gains",
-            "snow",
-            "decorrelated_cylinder",
-        ],
-    )
+    intercylinder_only = param.Boolean(default=False)
 
     def __init__(self, data, config, **params):
         self.data = data
         self.selections = None
-        self._chime_obs = ephemeris.chime_observer()
 
-        HeatMapPlot.__init__(self, "Ringmap", activated=True, **params)
+        RaHeatMapPlot.__init__(self, "Ringmap", activated=True, config=config, **params)
 
         # transpose by default
         self.transpose = True
+
+        self.height = 800
 
         self.read_config(config)
 
@@ -171,17 +138,6 @@ class RingMapPlot(HeatMapPlot, Reader):
     def update_weight_threshold_selection(self):
         self.param["weight_mask_threshold"].constant = not self.weight_mask
 
-    @property
-    def param_control(self):
-        p = panel.param.Param(
-            self.param,
-            expand_button=False,
-            widgets={
-                "flags": panel.widgets.MultiChoice,
-            },
-        )
-        return panel.Column(p)
-
     @param.depends(
         "transpose",
         "logarithmic_colorscale",
@@ -196,12 +152,19 @@ class RingMapPlot(HeatMapPlot, Reader):
         "weight_mask_threshold",
         "flag_mask",
         "flags",
+        "height",
+        "intercylinder_only",
     )
     def view(self):
         if self.lsd is None:
             return panel.pane.Markdown("No data selected.")
         try:
-            container = self.data.load_file(self.revision, self.lsd, "ringmap")
+            if self.intercylinder_only:
+                self.template_subtraction = False
+                name = "ringmap_intercyl"
+            else:
+                name = "ringmap"
+            container = self.data.load_file(self.revision, self.lsd, name)
         except DataError as err:
             return panel.pane.Markdown(
                 f"Error: {str(err)}. Please report this problem."
@@ -232,26 +195,12 @@ class RingMapPlot(HeatMapPlot, Reader):
             rmap = np.squeeze(container.map[sel_beam, sel_pol, sel_freq])
 
         if self.flag_mask:
-            if self._cache_flags:
-                flag_time_spans = get_flags_cached(self.flags, self._cache_reset_time)
-            else:
-                flag_time_spans = get_flags(
-                    self.flags,
-                    self._chime_obs.lsd_to_unix(self.lsd.lsd),
-                    self._chime_obs.lsd_to_unix(self.lsd.lsd + 1),
-                )
-            csd_arr = self.lsd.lsd + container.index_map["ra"] / 360.0
-            flag_mask = np.zeros_like(csd_arr, dtype=np.bool)
-            u2l = self._chime_obs.unix_to_lsd
-            for type_, ca, cb in flag_time_spans:
-                flag_mask[(csd_arr > u2l(ca)) & (csd_arr < u2l(cb))] = True
-            flag_mask = flag_mask[:, np.newaxis]
-            rmap = np.where(flag_mask, np.nan, rmap)
+            rmap = np.where(self._flags_mask(container.index_map["ra"]), np.nan, rmap)
 
         if self.weight_mask:
             try:
                 rms = np.squeeze(container.rms[sel_pol, sel_freq])
-            except IndexError as err:
+            except IndexError:
                 logger.error(
                     f"rms dataset of ringmap file for rev {self.revision} lsd "
                     f"{self.lsd} is missing [{sel_pol}, {sel_freq}] (polarization, "
@@ -259,14 +208,11 @@ class RingMapPlot(HeatMapPlot, Reader):
                 )
                 self.weight_mask = False
             else:
-                if self.polarization == self.mean_pol_text:
-                    rms = np.nanmean(rms, axis=0)
-                weight_mask = tools.invert_no_zero(rms) < self.weight_mask_threshold
-                weight_mask = weight_mask[:, np.newaxis]
-                rmap = np.where(weight_mask, np.nan, rmap)
+                rmap = np.where(self._weights_mask(rms), np.nan, rmap)
 
         # Set flagged data to nan
         rmap = np.where(rmap == 0, np.nan, rmap)
+
         if self.crosstalk_removal:
             # The mean of an all-nan slice (masked?) is nan. We don't need a warning about that.
             with warnings.catch_warnings():
@@ -359,18 +305,18 @@ class RingMapPlot(HeatMapPlot, Reader):
 
         if self.mark_moon:
             # Put a ring around the location of the moon if it transits on this day
-            eph = ephemeris.skyfield_wrapper.ephemeris
+            eph = skyfield_wrapper.ephemeris
 
             # Start and end times of the CSD
-            st = self._chime_obs.lsd_to_unix(self.lsd.lsd)
-            et = self._chime_obs.lsd_to_unix(self.lsd.lsd + 1)
+            st = csd_to_unix(self.lsd.lsd)
+            et = csd_to_unix(self.lsd.lsd + 1)
 
-            moon_time, moon_dec = source_transit(
-                self._chime_obs.skyfield_obs(), eph["moon"], st, et, return_dec=True
+            moon_time, moon_dec = chime.transit_times(
+                eph["moon"], st, et, return_dec=True
             )
 
             if len(moon_time):
-                lunar_transit = self._chime_obs.unix_to_lsd(moon_time[0])
+                lunar_transit = unix_to_csd(moon_time[0])
                 lunar_dec = moon_dec[0]
                 lunar_ra = (lunar_transit % 1) * 360.0
                 lunar_za = np.sin(np.radians(lunar_dec - 49.0))
@@ -380,17 +326,14 @@ class RingMapPlot(HeatMapPlot, Reader):
                     img *= hv.Ellipse(lunar_za, lunar_ra, (0.04, 21))
 
         if self.mark_day_time:
-            # Calculate the sun rise/set times on this sidereal day (it's not clear to me there
-            # is exactly one of each per day, I think not)
-            sf_obs = self._chime_obs.skyfield_obs()
+            # Calculate the sun rise/set times on this sidereal day
 
             # Start and end times of the CSD
-            start_time = self._chime_obs.lsd_to_unix(self.lsd.lsd)
-            end_time = self._chime_obs.lsd_to_unix(self.lsd.lsd + 1)
+            start_time = csd_to_unix(self.lsd.lsd)
+            end_time = csd_to_unix(self.lsd.lsd + 1)
 
-            times, rises = source_rise_set(
-                sf_obs,
-                ephemeris.skyfield_wrapper.ephemeris["sun"],
+            times, rises = chime.rise_set_times(
+                skyfield_wrapper.ephemeris["sun"],
                 start_time,
                 end_time,
                 diameter=-10,
@@ -399,9 +342,9 @@ class RingMapPlot(HeatMapPlot, Reader):
             sun_set = 0
             for t, r in zip(times, rises):
                 if r:
-                    sun_rise = (self._chime_obs.unix_to_lsd(t) % 1) * 360
+                    sun_rise = (unix_to_csd(t) % 1) * 360
                 else:
-                    sun_set = (self._chime_obs.unix_to_lsd(t) % 1) * 360
+                    sun_set = (unix_to_csd(t) % 1) * 360
 
             # Highlight the day time data
             opts = {
@@ -427,9 +370,16 @@ class RingMapPlot(HeatMapPlot, Reader):
 
         img.opts(
             # Fix height, but make width responsive
-            height=500,
+            height=self.height,
             responsive=True,
             shared_axes=True,
+            bgcolor="lightgray",
         )
 
         return panel.Row(img, width_policy="max")
+
+    def _weights_mask(self, rms):
+        if self.polarization == self.mean_pol_text:
+            rms = np.nanmean(rms, axis=0)
+        weight_mask = tools.invert_no_zero(rms) < self.weight_mask_threshold
+        return weight_mask[:, np.newaxis]

@@ -9,19 +9,17 @@ from holoviews.plotting.util import process_cmap
 from matplotlib import cm as matplotlib_cm
 
 from caput.config import Reader, Property
-from ch_util import ephemeris
+from ch_util.ephemeris import chime, csd, skyfield_wrapper, csd_to_unix, unix_to_csd
 
-from .heatmap import HeatMapPlot
+from .heatmap import RaHeatMapPlot
 
-# TODO: the ephemeris module will get moved to caput soon
-from ..util.ephemeris import source_rise_set
 from ..util.exception import DataError
 from ..util.plotting import hv_image_with_gaps
 
 logger = logging.getLogger(__name__)
 
 
-class SensitivityPlot(HeatMapPlot, Reader):
+class SensitivityPlot(RaHeatMapPlot, Reader):
     """
     Attributes
     ----------
@@ -37,12 +35,6 @@ class SensitivityPlot(HeatMapPlot, Reader):
     xlim = (0, 360)
     zlim = (0.01, 0.1)
 
-    # Config
-    _cache_reset_time = Property(
-        proptype=int, key="flag_cache_reset_seconds", default=86400
-    )
-    _cache_flags = Property(proptype=bool, key="cache_flags", default=False)
-
     # parameters
     # Hide lsd, revision selectors by setting precedence < 0
     lsd = param.Selector(precedence=-1)
@@ -51,13 +43,16 @@ class SensitivityPlot(HeatMapPlot, Reader):
     polarization = param.ObjectSelector()
     mark_day_time = param.Boolean(default=True)
     mask_rfi = param.Boolean(default=True)
+    divide_by_estimate = param.Boolean(default=False)
 
     def __init__(self, data, config, **params):
         self.data = data
         self.selections = None
-        self._chime_obs = ephemeris.chime_observer()
 
-        HeatMapPlot.__init__(self, "Sensitivity", activated=True, **params)
+        RaHeatMapPlot.__init__(
+            self, "Sensitivity", activated=True, config=config, **params
+        )
+        self.height = 650
         self.read_config(config)
         self.logarithmic_colorscale = True
 
@@ -86,6 +81,10 @@ class SensitivityPlot(HeatMapPlot, Reader):
         "polarization",
         "mark_day_time",
         "mask_rfi",
+        "flag_mask",
+        "flags",
+        "height",
+        "divide_by_estimate",
     )
     def view(self):
         if self.lsd is None:
@@ -98,8 +97,8 @@ class SensitivityPlot(HeatMapPlot, Reader):
             )
 
         # Index map for ra (x-axis)
-        sens_csd = ephemeris.csd(sens_container.time)
-        index_map_ra = (sens_csd % 1) * 360
+        sens_csd = csd(sens_container.time)
+        index_map_ra = (sens_csd - self.lsd.lsd) * 360
         axis_name_ra = "RA [degrees]"
 
         # Index map for frequency (y-axis)
@@ -118,6 +117,12 @@ class SensitivityPlot(HeatMapPlot, Reader):
             sel_pol = np.where(sens_container.index_map["pol"] == self.polarization)[0]
             sens = np.squeeze(sens_container.measured[:, sel_pol])
 
+        if self.flag_mask:
+            sens = np.where(self._flags_mask(index_map_ra).T, np.nan, sens)
+
+        # Set flagged data to nan
+        sens = np.where(sens == 0, np.nan, sens)
+
         if self.mask_rfi:
             try:
                 rfi_container = self.data.load_file(self.revision, self.lsd, "rfi")
@@ -127,6 +132,13 @@ class SensitivityPlot(HeatMapPlot, Reader):
                 )
             rfi = np.squeeze(rfi_container.mask[:])
             sens *= np.where(rfi, np.nan, 1)
+
+        if self.divide_by_estimate:
+            estimate = np.squeeze(sens_container.radiometer[:, sel_pol])
+            if self.polarization == self.mean_pol_text:
+                estimate = np.squeeze(np.nanmean(estimate, axis=1))
+            estimate = np.where(estimate == 0, np.nan, estimate)
+            sens = sens / estimate
 
         if self.transpose:
             sens = sens.T
@@ -179,17 +191,14 @@ class SensitivityPlot(HeatMapPlot, Reader):
             )
 
         if self.mark_day_time:
-            # Calculate the sun rise/set times on this sidereal day (it's not clear to me there
-            # is exactly one of each per day, I think not)
-            sf_obs = self._chime_obs.skyfield_obs()
+            # Calculate the sun rise/set times on this sidereal day
 
             # Start and end times of the CSD
-            start_time = self._chime_obs.lsd_to_unix(self.lsd.lsd)
-            end_time = self._chime_obs.lsd_to_unix(self.lsd.lsd + 1)
+            start_time = csd_to_unix(self.lsd.lsd)
+            end_time = csd_to_unix(self.lsd.lsd + 1)
 
-            times, rises = source_rise_set(
-                sf_obs,
-                ephemeris.skyfield_wrapper.ephemeris["sun"],
+            times, rises = chime.rise_set_times(
+                skyfield_wrapper.ephemeris["sun"],
                 start_time,
                 end_time,
                 diameter=-10,
@@ -198,9 +207,9 @@ class SensitivityPlot(HeatMapPlot, Reader):
             sun_set = 0
             for t, r in zip(times, rises):
                 if r:
-                    sun_rise = (self._chime_obs.unix_to_lsd(t) % 1) * 360
+                    sun_rise = (unix_to_csd(t) % 1) * 360
                 else:
-                    sun_set = (self._chime_obs.unix_to_lsd(t) % 1) * 360
+                    sun_set = (unix_to_csd(t) % 1) * 360
 
             # Highlight the day time data
             opts = {
@@ -220,7 +229,7 @@ class SensitivityPlot(HeatMapPlot, Reader):
 
         img.opts(
             # Fix height, but make width responsive
-            height=500,
+            height=self.height,
             responsive=True,
             bgcolor="lightgray",
             shared_axes=True,

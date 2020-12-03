@@ -99,7 +99,10 @@ def start(
 
         # We have to redirect to the login handler manually, because tornado doesn't know about
         # the root URL.
-        kwargs["extra_patterns"] = [(r"/login", auth.CustomLoginHandler)]
+        kwargs["extra_patterns"] = [
+            (r"/login", auth.CustomLoginHandler),
+            (r"/logout", auth.CustomLogoutHandler),
+        ]
         kwargs["auth_provider"] = AuthModule(auth.__file__)
 
     panel.serve(

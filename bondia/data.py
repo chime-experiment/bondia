@@ -1,4 +1,4 @@
-from collections import OrderedDict
+from collections import OrderedDict, deque
 import glob
 import logging
 import os
@@ -20,12 +20,14 @@ logger = logging.getLogger(__name__)
 FILE_TYPES = {
     "delayspectrum": "delayspectrum_lsd_*.h5",
     "ringmap": "ringmap_validation_freqs_lsd_*.h5",
+    "ringmap_intercyl": "ringmap_intercyl_validation_freqs_lsd_*.h5",
     "sensitivity": "sensitivity_validation_lsd_*.h5",
     "rfi": "rfi_mask_lsd_*.h5",
 }
 CONTAINER_TYPES: Dict[str, Type[Union[DelaySpectrum, RingMap]]] = {
     "delayspectrum": DelaySpectrum,
     "ringmap": RingMap,
+    "ringmap_intercyl": RingMap,
     "sensitivity": SystemSensitivity,
     "rfi": RFIMask,
 }
@@ -34,10 +36,13 @@ CONTAINER_TYPES: Dict[str, Type[Union[DelaySpectrum, RingMap]]] = {
 class DataLoader(Reader):
     path = Property(proptype=Path)
     interval = Property(proptype=int, default=600)
+    max_days_in_memory = Property(proptype=int, default=10)
 
     def __init__(self):
+        self.num_days_in_memory = 0
         self._index = {}
         self._index_by_path = {}
+        self._lru = {}
 
         # Set up periodic data file indexing
         self._periodic_indexer = None
@@ -176,17 +181,66 @@ class DataLoader(Reader):
             raise DataError(
                 f"Couldn't find data for {not_found} when loading revision {revision}, day {day}"
             )
-        if isinstance(f, CONTAINER_TYPES[file_type]):
+        if f is not None:
+            self._lru_push(revision, day, file_type)
             return f
         logger.debug(f"Loading {file_type} file for {revision}, {day}...")
+        f = self._index[revision][day].files[file_type]
         if f is None:
             raise DataError(f"{file_type} for day {day}, {revision} not available.")
+        self._free_oldest_file(file_type)
         setattr(
             self._index[revision][day],
             file_type,
             CONTAINER_TYPES[file_type].from_file(f),
         )
+        self._lru_push(revision, day, file_type)
         return getattr(self._index[revision][day], file_type)
+
+    def _free_oldest_file(self, file_type: str):
+        """Remove the file from memory that had been loaded the longest time ago."""
+        if file_type not in self._lru:
+            self._lru[file_type] = deque()
+            return
+        if len(self._lru[file_type]) > self.max_days_in_memory - 1:
+            i = self._lru_pop(file_type)
+            setattr(self._index[i[0]][i[1]], file_type, None)
+
+    def _lru_pop(self, file_type):
+        """
+        Get indices of least recently used file.
+
+        Returns
+        -------
+        Tuple[str, Day]
+            revision and day
+        """
+        i = self._lru[file_type].popleft()
+        logger.debug(f"Removing {file_type} for {i[0]}, day {i[1]} from memory")
+        return i
+
+    def _lru_push(self, revision: str, day: Day, file_type: str):
+        """
+        Signal recent usage of file indices.
+
+        Parameters
+        ----------
+        revision : str
+            Revision key
+        day : Day
+            Day
+        file_type : str
+            File type name
+        """
+        if file_type not in self._lru:
+            self._lru[file_type] = deque()
+        indices = (revision, day)
+        if indices in self._lru[file_type]:
+            self._lru[file_type].remove(indices)
+            logger.debug(
+                f"Keeping {file_type} for {revision}, day {day} in memory longer."
+            )
+        self._lru[file_type].append(indices)
 
     def load_file_from_path(self, path: os.PathLike, container):
         """
@@ -207,6 +261,7 @@ class DataLoader(Reader):
 class LSD:
     def __init__(self, path: os.PathLike, rev: str, day: Day):
         self._day = day
+        self.files = {}
 
         for file_type, file_type_glob in FILE_TYPES.items():
             file = glob.glob(os.path.join(path, file_type_glob))
@@ -224,7 +279,8 @@ class LSD:
                     f"Found file for LSD {lsd} when expecting LSD {day.lsd}: {file}"
                 )
 
-            setattr(self, file_type, file)
+            self.files[file_type] = file
+            setattr(self, file_type, None)
 
     def __repr__(self):
         return self._day.__repr__()

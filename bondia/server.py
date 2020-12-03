@@ -56,6 +56,7 @@ class BondiaServer(Reader):
             self._width_drawer_widgets,
             self.data,
             self._config_plots,
+            self.root_url,
         ).render()
         return instance
 
