@@ -111,7 +111,7 @@ class BondiaGui(param.Parameterized):
 
         # If day doesn't change, the opinion UI is not updated. So we do it here...
         if hasattr(self, "lsd") and day == selected_day:
-            self.param["lsd"].trigger("value")
+            self.param.trigger("lsd")
 
         return day
 
