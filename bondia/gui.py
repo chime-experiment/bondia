@@ -55,7 +55,7 @@ class BondiaGui(param.Parameterized):
             "You didn't give your opinion yet.", alert_type="primary"
         )
 
-        self._day_stats = pn.Row(pn.Column(), pn.Column())
+        self._day_stats = pn.Row(pn.Column(), pn.Column(), pn.Column)
 
         param.Parameterized.__init__(self, **params)
 
@@ -148,11 +148,23 @@ class BondiaGui(param.Parameterized):
             (k, opinions_by_user[k])
             for k in sorted(opinions_by_user, key=opinions_by_user.get, reverse=True)
         ]
-        self._day_stats[1] = hv.Table(
+        self._day_stats[2] = hv.Table(
             opinions_by_user,
             "User",
             "Number of opinions",
             label="Highscore",
+        )
+        notes = opinion.get_notes_for_day(self.lsd)
+        text = """
+            <span style="color:black;font-family:Arial;font-style:bold;font-weight:bold;font-size:12pt">
+            Notes
+            </span><div style="text-align: left">
+            """
+        for user, entry in notes.items():
+            text = f"{text}<b>{user}</b>: (<i>{entry[0]}</i>) {entry[1]}</br>"
+        text = f"{text}</div>"
+        self._day_stats[1] = pn.pane.HTML(
+            text,
         )
 
     def _update_opinion_buttons(self):
