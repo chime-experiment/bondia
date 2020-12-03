@@ -9,6 +9,8 @@ from . import __version__
 
 logger = logging.getLogger(__name__)
 
+options_decision = DataFlagOpinion.decision.enum_list
+
 
 bondia_dataflagopiniontype = {
     "name": "bondia",
@@ -184,13 +186,48 @@ def get_opinions_for_day(day):
         Number of good, unsure, bad opinions
     """
     num_opinions = {}
-    for decision in DataFlagOpinion.decision.enum_list:
+    for decision in options_decision:
         num_opinions[decision] = (
             DataFlagOpinion.select()
             .where(DataFlagOpinion.lsd == day.lsd, DataFlagOpinion.decision == decision)
             .count()
         )
     return num_opinions
+
+
+def get_notes_for_day(day):
+    """
+    Returns all user notes for one day.
+
+    Parameters
+    ----------
+    day : :class:`Day`
+        Day
+
+    Returns
+    -------
+    Dict[string, Tuple[string, string]]
+        Decisions ("good", "bad" or "unsure") and notes with user names as keys
+    """
+    try:
+        entries = DataFlagOpinion.select(
+            DataFlagOpinion.notes, DataFlagOpinion.decision, DataFlagOpinion.user_id
+        ).where(DataFlagOpinion.lsd == day.lsd)
+    except DataFlagOpinion.DoesNotExist:
+        entries = []
+
+    notes = {}
+    for e in entries:
+        n = e.notes
+        if n is not None and n != "":
+            user_name = (
+                MediaWikiUser.select(MediaWikiUser.user_name)
+                .where(MediaWikiUser.user_id == e.user_id)
+                .get()
+                .user_name
+            )
+            notes[user_name] = (e.decision, n)
+    return notes
 
 
 def get_user_stats(zero=True):
