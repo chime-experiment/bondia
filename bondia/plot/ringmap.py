@@ -160,6 +160,7 @@ class RingMapPlot(RaHeatMapPlot, Reader):
             return panel.pane.Markdown("No data selected.")
         try:
             if self.intercylinder_only:
+                self.template_subtraction = False
                 name = "ringmap_intercyl"
             else:
                 name = "ringmap"
