@@ -37,6 +37,7 @@ class RingMapPlot(RaHeatMapPlot, Reader):
     xlim = (-1, 1)
     ylim = (0, 360)
     zlim = (-5, 5)
+    zlim_intercyl = (-2, 2)
 
     # Config
     _stack_path = Property(proptype=str, key="stack")
@@ -68,6 +69,12 @@ class RingMapPlot(RaHeatMapPlot, Reader):
         self.height = 800
 
         self.read_config(config)
+
+        # Keep track of template subtraction while intercylinder ringmap is viewed
+        self.template_subtraction_non_intercylinder = self.template_subtraction
+
+        # Register callback for switching colormap range betweem intercylinder and normal
+        self.param.watch(self._changed_intercyl, "intercylinder_only", onlychanged=True)
 
     def _finalise_config(self):
         if self._stack_path is None:
@@ -138,6 +145,45 @@ class RingMapPlot(RaHeatMapPlot, Reader):
     def update_weight_threshold_selection(self):
         self.param["weight_mask_threshold"].constant = not self.weight_mask
 
+    def _changed_intercyl(self, *events):
+        """When the intercylinder_only option is changed, we keep track of what the colormap range was."""
+        for event in events:
+            if event.old:
+                # changing from intercylinder to normal
+                self.zlim_intercyl = self.colormap_range
+
+                # Make sure view is triggered also if the colormap and template stay the same
+                if (
+                    self.zlim == self.colormap_range
+                    and self.template_subtraction_non_intercylinder
+                    == self.template_subtraction
+                ):
+                    self.param.trigger("colormap_range")
+
+                # Restore template settings
+                self.param["template_subtraction"].constant = False
+                self.template_subtraction = self.template_subtraction_non_intercylinder
+
+                self.colormap_range = self.zlim
+            else:
+                # changing from normal to intercylinder
+                self.zlim = self.colormap_range
+
+                # Make sure view is triggered also if the colormap and template stay the same
+                if (
+                    self.zlim_intercyl == self.colormap_range
+                    and not self.template_subtraction
+                ):
+                    self.param.trigger("colormap_range")
+
+                # Save template settings
+                self.template_subtraction_non_intercylinder = self.template_subtraction
+                self.template_subtraction = False
+                self.param["template_subtraction"].constant = True
+
+                self.colormap_range = self.zlim_intercyl
+
+    # No dependency on intercyl_only, because that changes the colormap range already which triggers view.
     @param.depends(
         "transpose",
         "logarithmic_colorscale",
@@ -153,14 +199,12 @@ class RingMapPlot(RaHeatMapPlot, Reader):
         "flag_mask",
         "flags",
         "height",
-        "intercylinder_only",
     )
     def view(self):
         if self.lsd is None:
             return panel.pane.Markdown("No data selected.")
         try:
             if self.intercylinder_only:
-                self.template_subtraction = False
                 name = "ringmap_intercyl"
             else:
                 name = "ringmap"
