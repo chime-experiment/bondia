@@ -152,6 +152,10 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
                     f"Error: {str(err)}. Please report this problem."
                 )
             rfi = np.squeeze(rfi_container.mask[:])
+
+            # calculate percentage masked to print later
+            rfi_percentage = round(np.count_nonzero(rfi) / rfi.size * 100)
+
             sens *= np.where(rfi, np.nan, 1)
 
         if self.divide_by_estimate:
@@ -180,6 +184,9 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
             "colorbar": True,
             "xticks": [0, 60, 120, 180, 240, 300, 360],
         }
+        if self.mask_rfi:
+            image_opts["title"] = f"RFI mask: {rfi_percentage}%"
+
         overlay_opts = {
             "xlim": xlim,
             "ylim": ylim,
