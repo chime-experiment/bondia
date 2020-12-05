@@ -1,3 +1,18 @@
+# [0.4.1](https://github.com/chime-experiment/bondia/compare/v0.4.0...v0.4.1) (2020-12-05)
+
+
+### Bug Fixes
+
+* **opinion:** get_day_without_opinion - return default in error case ([77462d3](https://github.com/chime-experiment/bondia/commit/77462d3911328c3fe670da08559e93f36e6a44c0))
+* **ringmap:** intercylinder colormap range ([1c9c679](https://github.com/chime-experiment/bondia/commit/1c9c6798046a840c6aa8430a63d3e758254f2860)), closes [#105](https://github.com/chime-experiment/bondia/issues/105)
+
+
+### Features
+
+* **sensitivity:** divide_by_estimate colormap range ([118dfd2](https://github.com/chime-experiment/bondia/commit/118dfd2361f1c1d7e4cae3d6f69594e394536c8b)), closes [#103](https://github.com/chime-experiment/bondia/issues/103)
+
+
+
 # [0.4.0](https://github.com/chime-experiment/bondia/compare/v0.3.0...v0.4.0) (2020-12-03)
 
 
