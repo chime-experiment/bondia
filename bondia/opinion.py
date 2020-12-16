@@ -2,6 +2,8 @@ import logging
 
 from time import time
 
+from peewee import fn
+
 from chimedb.dataflag import DataFlagOpinion, DataFlagOpinionType, DataRevision
 from chimedb.core.mediawiki import MediaWikiUser
 
@@ -100,6 +102,39 @@ def get_days_with_opinion(revision, user):
         .where(MediaWikiUser.user_name == user, DataRevision.name == revision)
     )
     return [d.lsd for d in days_with_opinion]
+
+
+def sort_by_num_opinions(revision, lsds):
+    results = (
+        DataFlagOpinion.select(
+            DataFlagOpinion.lsd, fn.COUNT(DataFlagOpinion.id).alias("count")
+        )
+        .join(DataRevision)
+        .where(
+            DataRevision.name == revision, DataFlagOpinion.lsd << [d.lsd for d in lsds]
+        )
+        .group_by(DataFlagOpinion.lsd)
+        .order_by(fn.COUNT(DataFlagOpinion.id))
+    ).execute()
+
+    lsds = {day.lsd: day for day in lsds}
+    sort_keys = [(r.count, r.lsd) for r in results]
+    _, lsd_keys = zip(*sort_keys)
+
+    # add the days witout opinions
+    for lsd in lsds.keys():
+        if lsd not in lsd_keys:
+            lsd_keys.append(lsd)
+            sort_keys.append((lsd, 0))
+
+    sort_keys.sort()
+
+    # reuse old day objects
+    sorted_lsds = []
+    for keys in sort_keys:
+        sorted_lsds.append(lsds[keys[1]])
+
+    return sorted_lsds
 
 
 def get_days_without_opinion(days, revision, user):
@@ -215,6 +250,8 @@ def get_notes_for_day(day):
     Dict[string, Tuple[string, string]]
         Decisions ("good", "bad" or "unsure") and notes with user names as keys
     """
+    if day is None:
+        return {}
     try:
         entries = DataFlagOpinion.select(
             DataFlagOpinion.notes, DataFlagOpinion.decision, DataFlagOpinion.user_id
