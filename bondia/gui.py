@@ -21,6 +21,7 @@ class BondiaGui(param.Parameterized):
     lsd = param.ObjectSelector(label="Select Sidereal Day")
     revision = param.ObjectSelector(label="Select Data Revision")
     filter_lsd = param.Boolean(default=False, label="Hide days I have voted for")
+    sort_lsds = param.Boolean(default=False, label="Sort by number of opinions")
 
     def __init__(
         self,
@@ -65,20 +66,31 @@ class BondiaGui(param.Parameterized):
         self.param["lsd"].objects = list(self._data.days(self.revision))
         self.lsd = self._choose_lsd()
 
-    @param.depends("revision", "filter_lsd", watch=True)
+    @param.depends("revision", "filter_lsd", "sort_lsds", watch=True)
     def update_days(self):
         """Update days depending on selected revision."""
+
         if self.filter_lsd and self.current_user is not None:
-            self.param["lsd"].objects = opinion.get_days_without_opinion(
+            days = opinion.get_days_without_opinion(
                 list(self._data.days(self.revision)),
                 self.revision,
                 self.current_user,
             )
         else:
-            self.param["lsd"].objects = list(self._data.days(self.revision))
+            days = list(self._data.days(self.revision))
+
+        if self.sort_lsds:
+            days = opinion.sort_by_num_opinions(self.revision, days)
+
+        self.param["lsd"].objects = days
 
         if self.param["lsd"].objects:
-            self.lsd = self._choose_lsd()
+            l = self._choose_lsd()
+            if getattr(self, "lsd", -1) == l:
+                self.lsd = l
+                self.param.trigger("lsd")
+            else:
+                self.lsd = l
 
     @param.depends("lsd")
     def data_description(self):
@@ -99,19 +111,18 @@ class BondiaGui(param.Parameterized):
             plot.revision = self.revision
 
     def _choose_lsd(self):
-        selected_day = getattr(self, "lsd", None)
+        if self.sort_lsds:
+            day = self.param["lsd"].objects[0]
+        else:
+            selected_day = getattr(self, "lsd", None)
 
-        days = self._data.days(self.revision)
-        if self.current_user is None:
-            return days[-1]
-        day = opinion.get_day_without_opinion(
-            selected_day, days, self.revision, self.current_user
-        )
+            days = self._data.days(self.revision)
+            if self.current_user is None:
+                return days[-1]
+            day = opinion.get_day_without_opinion(
+                selected_day, days, self.revision, self.current_user
+            )
         logger.debug(f"Chose new LSD to display: {day}.")
-
-        # If day doesn't change, the opinion UI is not updated. So we do it here...
-        if hasattr(self, "lsd") and day == selected_day:
-            self.param.trigger("lsd")
 
         return day
 
@@ -194,6 +205,8 @@ class BondiaGui(param.Parameterized):
 
         # Checkbox to show only days w/o opinion
         template.add_panel("day_filter_opinion_checkbox", self.param["filter_lsd"])
+        # Checkbox to sort days by number of opinions
+        template.add_panel("day_sort_checkbox", self.param["sort_lsds"])
 
         # Fill the template with components
         template.add_panel("data_description", self.data_description)
@@ -321,6 +334,8 @@ class BondiaGui(param.Parameterized):
         else:
             self._opinion_warning.alert_type = "success"
             self._opinion_warning.object = f"Opinion added for LSD {lsd.lsd}"
+            if self.sort_lsds or self.filter_lsd:
+                self.update_days()
             self.lsd = self._choose_lsd()
 
     @property
