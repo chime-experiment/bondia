@@ -103,7 +103,7 @@ jobs:
 
     - name: Install python packages from private repos
       run: |
-        pip install ./ch_util ./chimedb ./chimedb_di ./chimedb_dataflag ./chimedb_config ./ch_pipeline
+        pip install --use-deprecated=legacy-resolver ./ch_util ./chimedb ./chimedb_di ./chimedb_dataflag ./chimedb_config ./ch_pipeline
 
     - name: Remove cloned repositories
       run: |
@@ -115,12 +115,12 @@ jobs:
 
     - name: Install bondia dependencies
       run: |
-        pip install -r requirements.txt
+        pip install --use-deprecated=legacy-resolver -r requirements.txt
         pip install pytest
 
     - name: Install bondia
       run: |
-        pip install .
+        pip install --use-deprecated=legacy-resolver .
 
     - name: Run tests
       run: pytest .

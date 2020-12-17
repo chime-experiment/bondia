@@ -1,3 +1,13 @@
+# [0.5.0](https://github.com/chime-experiment/bondia/compare/v0.4.1...v0.5.0) (2020-12-17)
+
+
+### Features
+
+* **gui:** add option: sort days by number of opinions ([5cc89f3](https://github.com/chime-experiment/bondia/commit/5cc89f3b14570945064f737cc6bb5eefc1771c1b))
+* **sensitivity:** print percentage of rfi mask ([aad52bb](https://github.com/chime-experiment/bondia/commit/aad52bbfd1e852ae2a34ed630b97fdc06d803507)), closes [#101](https://github.com/chime-experiment/bondia/issues/101)
+
+
+
 # [0.4.1](https://github.com/chime-experiment/bondia/compare/v0.4.0...v0.4.1) (2020-12-05)
 
 
