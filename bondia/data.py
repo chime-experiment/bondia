@@ -102,7 +102,7 @@ class DataLoader(Reader):
         This assumes the revisions being numbered like "rev_00", "rev_01", "rev_17", where their
         order is the same as the revision strings sorted by python string comparison.
         """
-        return sorted(self.revisions)[-1]
+        return self.revisions[-1]
 
     def index_files(self, dirs):
         """
@@ -122,7 +122,7 @@ class DataLoader(Reader):
 
         new_lsds = {}
         for d in dirs:
-            rev_dirs = glob.glob(os.path.join(d, "rev_*"))
+            rev_dirs = sorted(glob.glob(os.path.join(d, "rev_*")))
             for rev_dir in rev_dirs:
                 if not os.path.isdir(rev_dir):
                     logger.debug(
