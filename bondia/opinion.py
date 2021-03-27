@@ -1,5 +1,6 @@
 import logging
 
+from collections import defaultdict
 from time import time
 
 from peewee import fn
@@ -247,29 +248,33 @@ def get_notes_for_day(day):
 
     Returns
     -------
-    Dict[string, Tuple[string, string]]
-        Decisions ("good", "bad" or "unsure") and notes with user names as keys
+    Dict[string, Dict[string, Tuple[string, string]]
+        The key of the outer dict is the revision, the inner dicts key is the user name.
+        The tuple contains decisions ("good", "bad" or "unsure") and notes.
     """
     if day is None:
         return {}
     try:
-        entries = DataFlagOpinion.select(
-            DataFlagOpinion.notes, DataFlagOpinion.decision, DataFlagOpinion.user_id
-        ).where(DataFlagOpinion.lsd == day.lsd)
+        entries = (
+            DataFlagOpinion.select(
+                DataFlagOpinion.notes,
+                DataFlagOpinion.decision,
+                MediaWikiUser.user_name,
+                DataRevision.name,
+            )
+            .join(DataRevision)
+            .switch(DataFlagOpinion)
+            .join(MediaWikiUser, on=(MediaWikiUser.user_id == DataFlagOpinion.user_id))
+            .where(DataFlagOpinion.lsd == day.lsd)
+        )
     except DataFlagOpinion.DoesNotExist:
         entries = []
 
-    notes = {}
+    notes = defaultdict(dict)
     for e in entries:
         n = e.notes
         if n is not None and n != "":
-            user_name = (
-                MediaWikiUser.select(MediaWikiUser.user_name)
-                .where(MediaWikiUser.user_id == e.user_id)
-                .get()
-                .user_name
-            )
-            notes[user_name] = (e.decision, n)
+            notes[e.revision.name][e.user.user_name] = (e.decision, n)
     return notes
 
 
