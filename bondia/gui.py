@@ -165,14 +165,32 @@ class BondiaGui(param.Parameterized):
             "Number of opinions",
             label="Highscore",
         )
-        notes = opinion.get_notes_for_day(self.lsd)
+        notes_by_rev = opinion.get_notes_for_day(self.lsd)
         text = """
             <span style="color:black;font-family:Arial;font-style:bold;font-weight:bold;font-size:12pt">
             Notes
             </span><div style="text-align: left">
             """
-        for user, entry in notes.items():
-            text = f"{text}<b>{user}</b>: (<i>{entry[0]}</i>) {entry[1]}</br>"
+
+        def render_notes(revision, notes_by_user):
+            """Generate HTML of notes for one revision."""
+            text = f"<hr><pre>  {revision}</pre><br>"
+            for user, entry in notes_by_user.items():
+                text = f"{text}<b>{user}:</b> (<i>{entry[0]}</i>) {entry[1]}<br>"
+            return text
+
+        # Show notes for current revision first
+        try:
+            notes_cur_rev = notes_by_rev.pop(self.revision)
+        except KeyError as k:
+            logger.debug(f"No notes for this day (self.lsd) current revision ({k}).")
+        else:
+            text = f"{text}{render_notes(self.revision, notes_cur_rev)}"
+
+        # Show notes for other revisions
+        for revision, notes_by_user in notes_by_rev.items():
+            text = f"{text}{render_notes(revision, notes_by_user)}"
+
         text = f"{text}</div>"
         self._day_stats[1] = pn.pane.HTML(
             text,
