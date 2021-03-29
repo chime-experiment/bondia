@@ -5,12 +5,12 @@ chimedb.dataflag @ git+https://github.com/chime-experiment/chimedb_dataflag.git
 ch_pipeline @ git+https://github.com/chime-experiment/ch_pipeline.git
 ch_util @ git+https://github.com/chime-experiment/ch_util.git
 click
-datashader
+datashader==0.11.1
 draco @ git+https://github.com/radiocosmology/draco.git
 jinja2
 holoviews==1.13.5
 matplotlib
-numpy
+numpy==1.19.4
 panel==0.10.2
 param
 skyfield>=1.31
