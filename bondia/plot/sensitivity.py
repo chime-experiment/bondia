@@ -9,6 +9,7 @@ from holoviews.plotting.util import process_cmap
 from matplotlib import cm as matplotlib_cm
 
 from caput.config import Reader, Property
+from ch_pipeline.core.containers import RFIMask
 from ch_util.ephemeris import chime, csd, skyfield_wrapper, csd_to_unix, unix_to_csd
 
 from .heatmap import RaHeatMapPlot
@@ -152,6 +153,12 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
                     f"Error: {str(err)}. Please report this problem."
                 )
             rfi = np.squeeze(rfi_container.mask[:])
+
+            # This is expected to be either ch_pipeline.core.containers RFIMask or
+            # draco.core.containers.RFIMask. The first is true for data free of RFI,
+            # the second is true for data affected by RFI.
+            if isinstance(rfi_container, RFIMask):
+                rfi = ~rfi
 
             # calculate percentage masked to print later
             rfi_percentage = round(np.count_nonzero(rfi) / rfi.size * 100)
