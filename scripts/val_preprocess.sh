@@ -1,5 +1,5 @@
 #!/bin/bash
-source /project/rpp-krs/chime/chime_processed/daily/rev_02/venv/bin/activate
+source /project/rpp-chime/chime/chime_processed/daily/rev_03/venv/bin/activate
 
 # Only submit if no slurm job already queued.
 JOB_NAME="chp/validation"
@@ -12,6 +12,6 @@ fi
 
 # Only submit if there are files waiting to be processed.
 set -e
-python /home/rickn/chime_pipeline/code/bondia/scripts/val_preprocess.py --tryrun &> /project/rpp-krs/chime/chime_processed/validation_preprocess/jobout.log
+python /project/rpp-chime/chime/chime_env/daily_validation_preprocessing/val_preprocess.py --tryrun &> /project/rpp-chime/chime/chime_processed/validation_preprocess/jobout.log
 
-sbatch /home/rickn/chime_pipeline/code/bondia/scripts/val_preprocess.sbatch
+sbatch /project/rpp-chime/chime/chime_env/daily_validation_preprocessing/val_preprocess.sbatch

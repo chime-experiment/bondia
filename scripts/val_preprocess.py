@@ -7,10 +7,11 @@ import sys
 from pathlib import Path
 
 from ch_pipeline.core import containers as ccontainers
+from ch_pipeline.processing.base import slurm_jobs
 from draco.core import containers
 
-d = "/project/rpp-krs/chime/chime_processed/daily"
-out_dir = "/project/rpp-krs/chime/chime_processed/validation_preprocess"
+d = "/project/rpp-chime/chime/chime_processed/daily"
+out_dir = "/project/rpp-chime/chime/chime_processed/validation_preprocess"
 force = False
 
 logger = logging.getLogger(__name__)
