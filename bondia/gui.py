@@ -99,8 +99,6 @@ class BondiaGui(param.Parameterized):
 
     @param.depends("lsd", watch=True)
     def update_data_description_day(self):
-        # Update buttons when opinion given
-        self._update_opinion_buttons()
 
         # Update opinion warning and buttons when LSD is changed
         self._update_opinion_warning()
@@ -135,14 +133,12 @@ class BondiaGui(param.Parameterized):
             self._opinion_warning.height = 80
         elif opinion.get(self.lsd, self.revision, self.current_user):
             self._opinion_warning.object = """
-            **You already voted on the data quality of this day.** Choose a different option to change your decision.
+            **You already voted on the data quality of this day.** Choose an option to overwrite it..
             """
             self._opinion_warning.height = 110
         else:
             self._opinion_warning.object = "You didn't give your opinion yet."
             self._opinion_warning.height = 80
-
-        self._opinion_notes.value = None
 
         # Also update day stats here
         if self.lsd is not None:
@@ -173,6 +169,16 @@ class BondiaGui(param.Parameterized):
             label="Highscore",
         )
         notes_by_rev = opinion.get_notes_for_day(self.lsd)
+
+        # Pre-fill notes field with what user previously entered
+        try:
+            self._opinion_notes.value = notes_by_rev[self.revision][self.current_user][
+                1
+            ]
+        except KeyError:
+            self._opinion_notes.value = None
+
+        # Print all notes found for this day/revision
         text = """
             <span style="color:black;font-family:Arial;font-style:bold;font-weight:bold;font-size:12pt">
             Notes
@@ -202,19 +208,6 @@ class BondiaGui(param.Parameterized):
         self._day_stats[1] = pn.pane.HTML(
             text,
         )
-
-    def _update_opinion_buttons(self):
-        for decision in options_decision:
-            try:
-                self._opinion_buttons[
-                    decision
-                ].disabled = self.current_user is None or decision == opinion.get(
-                    self.lsd, self.revision, self.current_user
-                )
-            except KeyError as key:
-                logger.debug(
-                    f"Failure setting 'disabled' of opinion button: {key} button doesn't exist yet"
-                )
 
     @pn.depends(pn.state.param.busy)
     def _indicator(self, busy=False):
@@ -263,16 +256,19 @@ class BondiaGui(param.Parameterized):
             name="Mark day as good",
             button_type="success",
             width=self._width_drawer_widgets,
+            disabled=self.current_user is None,
         )
         self._opinion_buttons["bad"] = pn.widgets.Button(
             name="Mark day as bad",
             button_type="danger",
             width=self._width_drawer_widgets,
+            disabled=self.current_user is None,
         )
         self._opinion_buttons["unsure"] = pn.widgets.Button(
             name="I don't know",
             button_type="default",
             width=self._width_drawer_widgets,
+            disabled=self.current_user is None,
         )
 
         for decision in options_decision:
