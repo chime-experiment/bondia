@@ -9,6 +9,7 @@ from holoviews.plotting.util import process_cmap
 from matplotlib import cm as matplotlib_cm
 
 from caput.config import Reader, Property
+from ch_pipeline.core.containers import RFIMask
 from ch_util.ephemeris import chime, csd, skyfield_wrapper, csd_to_unix, unix_to_csd
 
 from .heatmap import RaHeatMapPlot
@@ -34,6 +35,7 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
     ylim = (400, 800)
     xlim = (0, 360)
     zlim = (0.01, 0.1)
+    zlim_estimate = (0.88, 0.9)
 
     # parameters
     # Hide lsd, revision selectors by setting precedence < 0
@@ -55,6 +57,27 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
         self.height = 650
         self.read_config(config)
         self.logarithmic_colorscale = True
+
+        # Register callback for switching colormap range between normalized using estimate and normal
+        self.param.watch(self._changed_estimate, "divide_by_estimate", onlychanged=True)
+
+    def _changed_estimate(self, *events):
+        """When the divide_by_estimate option is changed, we keep track of what the colormap range was."""
+        for event in events:
+            if event.old:
+                # divide_by_estimate was deactivated
+                self.zlim_estimate = self.colormap_range
+                # Make sure view is triggered also if the colormap stays the same
+                if self.zlim == self.colormap_range:
+                    self.param.trigger("colormap_range")
+                self.colormap_range = self.zlim
+            else:
+                # dicide_by_estimate was activated
+                self.zlim = self.colormap_range
+                # Make sure view is triggered also if the colormap stays the same
+                if self.zlim_estimate == self.colormap_range:
+                    self.param.trigger("colormap_range")
+                self.colormap_range = self.zlim_estimate
 
     @param.depends("lsd", watch=True)
     def update_pol(self):
@@ -84,7 +107,6 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
         "flag_mask",
         "flags",
         "height",
-        "divide_by_estimate",
     )
     def view(self):
         if self.lsd is None:
@@ -98,7 +120,7 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
 
         # Index map for ra (x-axis)
         sens_csd = csd(sens_container.time)
-        index_map_ra = (sens_csd % 1) * 360
+        index_map_ra = (sens_csd - self.lsd.lsd) * 360
         axis_name_ra = "RA [degrees]"
 
         # Index map for frequency (y-axis)
@@ -131,6 +153,16 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
                     f"Error: {str(err)}. Please report this problem."
                 )
             rfi = np.squeeze(rfi_container.mask[:])
+
+            # This is expected to be either ch_pipeline.core.containers RFIMask or
+            # draco.core.containers.RFIMask. The first is true for data free of RFI,
+            # the second is true for data affected by RFI.
+            if isinstance(rfi_container, RFIMask):
+                rfi = ~rfi
+
+            # calculate percentage masked to print later
+            rfi_percentage = round(np.count_nonzero(rfi) / rfi.size * 100)
+
             sens *= np.where(rfi, np.nan, 1)
 
         if self.divide_by_estimate:
@@ -159,6 +191,9 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
             "colorbar": True,
             "xticks": [0, 60, 120, 180, 240, 300, 360],
         }
+        if self.mask_rfi:
+            image_opts["title"] = f"RFI mask: {rfi_percentage}%"
+
         overlay_opts = {
             "xlim": xlim,
             "ylim": ylim,

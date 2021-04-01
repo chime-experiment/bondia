@@ -1,6 +1,9 @@
 import logging
 
+from collections import defaultdict
 from time import time
+
+from peewee import fn
 
 from chimedb.dataflag import DataFlagOpinion, DataFlagOpinionType, DataRevision
 from chimedb.core.mediawiki import MediaWikiUser
@@ -8,6 +11,8 @@ from chimedb.core.mediawiki import MediaWikiUser
 from . import __version__
 
 logger = logging.getLogger(__name__)
+
+options_decision = DataFlagOpinion.decision.enum_list
 
 
 bondia_dataflagopiniontype = {
@@ -100,6 +105,39 @@ def get_days_with_opinion(revision, user):
     return [d.lsd for d in days_with_opinion]
 
 
+def sort_by_num_opinions(revision, lsds):
+    results = (
+        DataFlagOpinion.select(
+            DataFlagOpinion.lsd, fn.COUNT(DataFlagOpinion.id).alias("count")
+        )
+        .join(DataRevision)
+        .where(
+            DataRevision.name == revision, DataFlagOpinion.lsd << [d.lsd for d in lsds]
+        )
+        .group_by(DataFlagOpinion.lsd)
+        .order_by(fn.COUNT(DataFlagOpinion.id))
+    ).execute()
+
+    lsds = {day.lsd: day for day in lsds}
+    sort_keys = [(r.count, r.lsd) for r in results]
+    _, lsd_keys = zip(*sort_keys)
+
+    # add the days witout opinions
+    for lsd in lsds.keys():
+        if lsd not in lsd_keys:
+            lsd_keys.append(lsd)
+            sort_keys.append((lsd, 0))
+
+    sort_keys.sort()
+
+    # reuse old day objects
+    sorted_lsds = []
+    for keys in sort_keys:
+        sorted_lsds.append(lsds[keys[1]])
+
+    return sorted_lsds
+
+
 def get_days_without_opinion(days, revision, user):
     user = user.capitalize()
     days_with_opinion = get_days_with_opinion(revision, user)
@@ -154,7 +192,13 @@ def get_day_without_opinion(last_selected_day, days, revision, user):
         return days[-1]
 
     # index of currently selected day
-    day_i = days.index(last_selected_day)
+    try:
+        day_i = days.index(last_selected_day)
+    except ValueError:
+        logger.debug(
+            f"Failed choosing a new day: {last_selected_day} not in options. Returning default..."
+        )
+        return days[-1]
 
     # look for a later day w/o opinion
     for i in range(day_i, len(days)):
@@ -170,27 +214,100 @@ def get_day_without_opinion(last_selected_day, days, revision, user):
     return last_selected_day
 
 
-def get_opinions_for_day(day):
+def get_opinions_for_day(day, revision=None):
     """
     Returns the number of opinions (sorted by decision) for one day.
 
     Parameters
     ----------
     day : :class:`Day`
+    revision : str
+        Revision name (e.g. `rev_01`). Optional.
 
     Returns
     -------
-    Dict[string, int]
-        Number of good, unsure, bad opinions
+    num_opinions_this_revision : Dict[string, int]
+        Number of good, unsure, bad opinions of `<revision>`. If no revision was defined, the number of all opinions on this day is returned here.
+    num_opinions_rest : Dict[string, int]
+        Number of good, unsure, bad opinions of all revisions except the given one. If no revision was defined, `None` is returned here.
     """
-    num_opinions = {}
-    for decision in DataFlagOpinion.decision.enum_list:
-        num_opinions[decision] = (
+    if revision is None:
+        num_opinions = {}
+        for decision in options_decision:
+            num_opinions[decision] = (
+                DataFlagOpinion.select()
+                .where(
+                    DataFlagOpinion.lsd == day.lsd, DataFlagOpinion.decision == decision
+                )
+                .count()
+            )
+        return num_opinions, None
+    num_opinions_this_revision = {}
+    num_opinions_rest = {}
+    for decision in options_decision:
+        num_opinions_this_revision[decision] = (
             DataFlagOpinion.select()
-            .where(DataFlagOpinion.lsd == day.lsd, DataFlagOpinion.decision == decision)
+            .join(DataRevision)
+            .where(
+                DataFlagOpinion.lsd == day.lsd,
+                DataFlagOpinion.decision == decision,
+                DataRevision.name == revision,
+            )
             .count()
         )
-    return num_opinions
+        num_opinions_rest[decision] = (
+            DataFlagOpinion.select()
+            .join(DataRevision)
+            .where(
+                DataFlagOpinion.lsd == day.lsd,
+                DataFlagOpinion.decision == decision,
+                DataRevision.name != revision,
+            )
+            .count()
+        )
+    logger.debug(f"num opinions {num_opinions_this_revision} {num_opinions_rest}")
+    return num_opinions_this_revision, num_opinions_rest
+
+
+def get_notes_for_day(day):
+    """
+    Returns all user notes for one day.
+
+    Parameters
+    ----------
+    day : :class:`Day`
+        Day
+
+    Returns
+    -------
+    Dict[string, Dict[string, Tuple[string, string]]
+        The key of the outer dict is the revision, the inner dicts key is the user name.
+        The tuple contains decisions ("good", "bad" or "unsure") and notes.
+    """
+    if day is None:
+        return {}
+    try:
+        entries = (
+            DataFlagOpinion.select(
+                DataFlagOpinion.notes,
+                DataFlagOpinion.decision,
+                MediaWikiUser.user_name,
+                DataRevision.name,
+            )
+            .join(DataRevision)
+            .switch(DataFlagOpinion)
+            .join(MediaWikiUser, on=(MediaWikiUser.user_id == DataFlagOpinion.user_id))
+            .where(DataFlagOpinion.lsd == day.lsd)
+        )
+    except DataFlagOpinion.DoesNotExist:
+        entries = []
+
+    notes = defaultdict(dict)
+    for e in entries:
+        n = e.notes
+        if n is not None and n != "":
+            notes[e.revision.name][e.user.user_name] = (e.decision, n)
+    return notes
 
 
 def get_user_stats(zero=True):
