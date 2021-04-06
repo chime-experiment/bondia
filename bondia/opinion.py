@@ -1,5 +1,6 @@
 import logging
 
+from collections import defaultdict
 from time import time
 
 from peewee import fn
@@ -213,27 +214,59 @@ def get_day_without_opinion(last_selected_day, days, revision, user):
     return last_selected_day
 
 
-def get_opinions_for_day(day):
+def get_opinions_for_day(day, revision=None):
     """
     Returns the number of opinions (sorted by decision) for one day.
 
     Parameters
     ----------
     day : :class:`Day`
+    revision : str
+        Revision name (e.g. `rev_01`). Optional.
 
     Returns
     -------
-    Dict[string, int]
-        Number of good, unsure, bad opinions
+    num_opinions_this_revision : Dict[string, int]
+        Number of good, unsure, bad opinions of `<revision>`. If no revision was defined, the number of all opinions on this day is returned here.
+    num_opinions_rest : Dict[string, int]
+        Number of good, unsure, bad opinions of all revisions except the given one. If no revision was defined, `None` is returned here.
     """
-    num_opinions = {}
+    if revision is None:
+        num_opinions = {}
+        for decision in options_decision:
+            num_opinions[decision] = (
+                DataFlagOpinion.select()
+                .where(
+                    DataFlagOpinion.lsd == day.lsd, DataFlagOpinion.decision == decision
+                )
+                .count()
+            )
+        return num_opinions, None
+    num_opinions_this_revision = {}
+    num_opinions_rest = {}
     for decision in options_decision:
-        num_opinions[decision] = (
+        num_opinions_this_revision[decision] = (
             DataFlagOpinion.select()
-            .where(DataFlagOpinion.lsd == day.lsd, DataFlagOpinion.decision == decision)
+            .join(DataRevision)
+            .where(
+                DataFlagOpinion.lsd == day.lsd,
+                DataFlagOpinion.decision == decision,
+                DataRevision.name == revision,
+            )
             .count()
         )
-    return num_opinions
+        num_opinions_rest[decision] = (
+            DataFlagOpinion.select()
+            .join(DataRevision)
+            .where(
+                DataFlagOpinion.lsd == day.lsd,
+                DataFlagOpinion.decision == decision,
+                DataRevision.name != revision,
+            )
+            .count()
+        )
+    logger.debug(f"num opinions {num_opinions_this_revision} {num_opinions_rest}")
+    return num_opinions_this_revision, num_opinions_rest
 
 
 def get_notes_for_day(day):
@@ -247,29 +280,33 @@ def get_notes_for_day(day):
 
     Returns
     -------
-    Dict[string, Tuple[string, string]]
-        Decisions ("good", "bad" or "unsure") and notes with user names as keys
+    Dict[string, Dict[string, Tuple[string, string]]
+        The key of the outer dict is the revision, the inner dicts key is the user name.
+        The tuple contains decisions ("good", "bad" or "unsure") and notes.
     """
     if day is None:
         return {}
     try:
-        entries = DataFlagOpinion.select(
-            DataFlagOpinion.notes, DataFlagOpinion.decision, DataFlagOpinion.user_id
-        ).where(DataFlagOpinion.lsd == day.lsd)
+        entries = (
+            DataFlagOpinion.select(
+                DataFlagOpinion.notes,
+                DataFlagOpinion.decision,
+                MediaWikiUser.user_name,
+                DataRevision.name,
+            )
+            .join(DataRevision)
+            .switch(DataFlagOpinion)
+            .join(MediaWikiUser, on=(MediaWikiUser.user_id == DataFlagOpinion.user_id))
+            .where(DataFlagOpinion.lsd == day.lsd)
+        )
     except DataFlagOpinion.DoesNotExist:
         entries = []
 
-    notes = {}
+    notes = defaultdict(dict)
     for e in entries:
         n = e.notes
         if n is not None and n != "":
-            user_name = (
-                MediaWikiUser.select(MediaWikiUser.user_name)
-                .where(MediaWikiUser.user_id == e.user_id)
-                .get()
-                .user_name
-            )
-            notes[user_name] = (e.decision, n)
+            notes[e.revision.name][e.user.user_name.lower()] = (e.decision, n)
     return notes
 
 

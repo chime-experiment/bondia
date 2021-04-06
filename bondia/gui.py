@@ -99,8 +99,6 @@ class BondiaGui(param.Parameterized):
 
     @param.depends("lsd", watch=True)
     def update_data_description_day(self):
-        # Update buttons when opinion given
-        self._update_opinion_buttons()
 
         # Update opinion warning and buttons when LSD is changed
         self._update_opinion_warning()
@@ -135,24 +133,29 @@ class BondiaGui(param.Parameterized):
             self._opinion_warning.height = 80
         elif opinion.get(self.lsd, self.revision, self.current_user):
             self._opinion_warning.object = """
-            **You already voted on the data quality of this day.** Choose a different option to change your decision.
+            **You already voted on the data quality of this day.** Choose an option to overwrite it..
             """
             self._opinion_warning.height = 110
         else:
             self._opinion_warning.object = "You didn't give your opinion yet."
             self._opinion_warning.height = 80
 
-        self._opinion_notes.value = None
-
         # Also update day stats here
         if self.lsd is not None:
-            num_opinions = opinion.get_opinions_for_day(self.lsd)
-            num_opinions.update({"total": sum(num_opinions.values())})
+            num_opinions_rev, num_opinions_rest = opinion.get_opinions_for_day(
+                self.lsd, self.revision
+            )
+            num_opinions_rev.update({"total": sum(num_opinions_rev.values())})
+            num_opinions_rest.update({"total": sum(num_opinions_rest.values())})
             self._day_stats[0] = hv.Table(
-                (list(num_opinions.keys()), list(num_opinions.values())),
-                "Decision",
-                "Number of opinions",
-                label="Opinions on this day",
+                (
+                    list(set(num_opinions_rev.keys()) | set(num_opinions_rest.keys())),
+                    list(num_opinions_rev.values()),
+                    list(num_opinions_rest.values()),
+                ),
+                ["Decision", f"{self.revision}"],
+                "All other revisions",
+                label="Number of opinions on this day",
             ).opts(sortable=False, index_position=None)
         opinions_by_user = opinion.get_user_stats(zero=False)
         opinions_by_user = [
@@ -165,31 +168,46 @@ class BondiaGui(param.Parameterized):
             "Number of opinions",
             label="Highscore",
         )
-        notes = opinion.get_notes_for_day(self.lsd)
+        notes_by_rev = opinion.get_notes_for_day(self.lsd)
+
+        # Pre-fill notes field with what user previously entered
+        try:
+            self._opinion_notes.value = notes_by_rev[self.revision][self.current_user][
+                1
+            ]
+        except KeyError:
+            self._opinion_notes.value = None
+
+        # Print all notes found for this day/revision
         text = """
             <span style="color:black;font-family:Arial;font-style:bold;font-weight:bold;font-size:12pt">
             Notes
             </span><div style="text-align: left">
             """
-        for user, entry in notes.items():
-            text = f"{text}<b>{user}</b>: (<i>{entry[0]}</i>) {entry[1]}</br>"
+
+        def render_notes(revision, notes_by_user):
+            """Generate HTML of notes for one revision."""
+            text = f"<hr><pre>  {revision}</pre><br>"
+            for user, entry in notes_by_user.items():
+                text = f"{text}<b>{user}:</b> (<i>{entry[0]}</i>) {entry[1]}<br>"
+            return text
+
+        # Show notes for current revision first
+        try:
+            notes_cur_rev = notes_by_rev.pop(self.revision)
+        except KeyError as k:
+            logger.debug(f"No notes for this day (self.lsd) current revision ({k}).")
+        else:
+            text = f"{text}{render_notes(self.revision, notes_cur_rev)}"
+
+        # Show notes for other revisions
+        for revision, notes_by_user in notes_by_rev.items():
+            text = f"{text}{render_notes(revision, notes_by_user)}"
+
         text = f"{text}</div>"
         self._day_stats[1] = pn.pane.HTML(
             text,
         )
-
-    def _update_opinion_buttons(self):
-        for decision in options_decision:
-            try:
-                self._opinion_buttons[
-                    decision
-                ].disabled = self.current_user is None or decision == opinion.get(
-                    self.lsd, self.revision, self.current_user
-                )
-            except KeyError as key:
-                logger.debug(
-                    f"Failure setting 'disabled' of opinion button: {key} button doesn't exist yet"
-                )
 
     @pn.depends(pn.state.param.busy)
     def _indicator(self, busy=False):
@@ -238,16 +256,19 @@ class BondiaGui(param.Parameterized):
             name="Mark day as good",
             button_type="success",
             width=self._width_drawer_widgets,
+            disabled=self.current_user is None,
         )
         self._opinion_buttons["bad"] = pn.widgets.Button(
             name="Mark day as bad",
             button_type="danger",
             width=self._width_drawer_widgets,
+            disabled=self.current_user is None,
         )
         self._opinion_buttons["unsure"] = pn.widgets.Button(
             name="I don't know",
             button_type="default",
             width=self._width_drawer_widgets,
+            disabled=self.current_user is None,
         )
 
         for decision in options_decision:
