@@ -306,7 +306,7 @@ def get_notes_for_day(day):
     for e in entries:
         n = e.notes
         if n is not None and n != "":
-            notes[e.revision.name][e.user.user_name] = (e.decision, n)
+            notes[e.revision.name][e.user.user_name.lower()] = (e.decision, n)
     return notes
 
 
