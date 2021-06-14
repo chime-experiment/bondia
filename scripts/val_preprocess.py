@@ -7,7 +7,6 @@ import sys
 from pathlib import Path
 
 from ch_pipeline.core import containers as ccontainers
-from ch_pipeline.processing.base import slurm_jobs
 from draco.core import containers
 
 d = "/project/rpp-chime/chime/chime_processed/daily"
