@@ -12,6 +12,6 @@ fi
 
 # Only submit if there are files waiting to be processed.
 set -e
-python /project/rpp-chime/chime/chime_env/daily_validation_preprocessing/val_preprocess.py --tryrun &> /project/rpp-chime/chime/chime_processed/validation_preprocess/jobout.log
+python /project/rpp-chime/chime/chime_env/daily_validation_preprocessing/val_preprocess.py tryrun &> /project/rpp-chime/chime/chime_processed/validation_preprocess/jobout.log
 
 sbatch /project/rpp-chime/chime/chime_env/daily_validation_preprocessing/val_preprocess.sbatch

@@ -11,4 +11,4 @@ source /project/rpp-krs/chime/chime_processed/daily/rev_03/venv/bin/activate
 
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
-srun python /project/rpp-chime/chime/chime_env/daily_validation_preprocessing/val_preprocess.py &> /project/rpp-chime/chime/chime_processed/validation_preprocess/jobout.log
+srun python /project/rpp-chime/chime/chime_env/daily_validation_preprocessing/val_preprocess.py run &> /project/rpp-chime/chime/chime_processed/validation_preprocess/jobout.log
