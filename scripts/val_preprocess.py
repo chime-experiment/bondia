@@ -15,56 +15,31 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def process(
-    rev, lsd, path, name, file_name, file_out_name, container, dryrun=False, **kwargs
-):
-    in_file = path.glob(file_name)
-    if not in_file:
-        logger.info(f"Found 0 {name} files in {path} (Expected 1).")
-        return 0
-    elif len(in_file) > 1:
-        logger.info(f"Found {len(in_file)} {name} files in {path} (Expected 1).")
+@click.command(help="Just print number of files that would get processed.")
+def dryrun():
+    total = list_files()
+    print(f"Would have processed {total} files.")
+    if total == 0:
         sys.exit(1)
-
-    in_file = in_file[0]
-
-    lsd_from_filename = int(in_file.stem[-4:])
-    if lsd != lsd_from_filename:
-        logger.error(
-            f"Found file for LSD {lsd} when expecting LSD {lsd_from_filename}: {in_file}"
-        )
-        sys.exit(1)
-
-    full_out_dir = Path(out_dir) / rev / str(lsd)
-
-    if not dryrun:
-        Path(full_out_dir).mkdir(parents=True, exist_ok=True)
-    out_file = full_out_dir / f"{file_out_name}_{lsd}.h5"
-    if out_file.is_file() and not force:
-        logger.debug(
-            f"Skipping {rev} {name} file for lsd {lsd}: {in_file}, outfile: {out_file}_{lsd}.h5"
-        )
-        return 0
-    logger.info(
-        f"Processing {rev} {name} file for lsd {lsd}: {in_file}, outfile: {out_file}_{lsd}.h5"
-    )
-
-    if not dryrun:
-        rm = container.from_file(in_file, **kwargs)
-        rm.to_disk(out_file)
-    return 1
 
 
 @click.command()
 @click.option(
-    "--dryrun/--nodryrun",
-    help="Just print number of files that would get processed.",
+    "--force/--noforce",
+    help="Overwrite existing files.",
     default=False,
     show_default=True,
 )
-def run(dryrun):
+def run():
+    todo_list = list_files()
+    for d in todo_list:
+        process(**d)
+    print(f"Processed {len(todo_list)} files.")
+
+
+def list_files():
     rev_dirs = Path(dir).glob("rev_*")
-    processed_total = 0
+    todo_list = []
     for rev_dir in rev_dirs:
         if not rev_dir.is_dir():
             logger.debug(f"Skipping {rev_dir} because it's not a (revision) directory.")
@@ -88,48 +63,91 @@ def run(dryrun):
 
                 ringmap_freqs = slice(399, 477, 969)
                 ringmap_pols = [0, 3]
-                processed_total = processed_total + process(
+                out = check_file(
                     rev,
                     lsd,
                     lsd_dir,
                     "ringmap",
                     "ringmap_lsd_*.h5",
                     "ringmap_validation_freqs_lsd",
-                    ccontainers.RingMap,
-                    freq_sel=ringmap_freqs,
-                    pol_sel=ringmap_pols,
-                    dryrun=dryrun,
                 )
-                processed_total = processed_total + process(
+                if out is not None:
+                    out.update(
+                        {
+                            "container": ccontainers.RingMap,
+                            "freq_sel": ringmap_freqs,
+                            "pol_sel": ringmap_pols,
+                        }
+                    )
+                    todo_list.append(out)
+                out = check_file(
                     rev,
                     lsd,
                     lsd_dir,
                     "ringmap_intercyl",
                     "ringmap_intercyl_lsd_*.h5",
                     "ringmap_intercyl_validation_freqs_lsd",
-                    ccontainers.RingMap,
-                    freq_sel=ringmap_freqs,
-                    pol_sel=ringmap_pols,
-                    dryrun=dryrun,
                 )
-                processed_total = processed_total + process(
+                if out is not None:
+                    out.update(
+                        {
+                            "container": ccontainers.RingMap,
+                            "freq_sel": ringmap_freqs,
+                            "pol_sel": ringmap_pols,
+                        }
+                    )
+                    todo_list.append(out)
+                out = check_file(
                     rev,
                     lsd,
                     lsd_dir,
                     "sensitivity",
                     "sensitivity_lsd_*.h5",
                     "sensitivity_validation_lsd",
-                    containers.SystemSensitivity,
-                    pol_sel=[0, 2],
-                    dryrun=dryrun,
                 )
+                if out is not None:
+                    out.update(
+                        {"container": containers.SystemSensitivity, "pol_sel": [0, 2]}
+                    )
+                    todo_list.append(out)
+        return todo_list
 
-        if dryrun:
-            print(f"Would have processed {processed_total} files.")
-            if processed_total == 0:
-                sys.exit(1)
-        else:
-            print(f"Processed {processed_total} files.")
+
+def check_file(rev, lsd, path, name, file_name, file_out_name):
+    in_file = path.glob(file_name)
+    if not in_file:
+        logger.info(f"Found 0 {name} files in {path} (Expected 1).")
+        return None
+    elif len(in_file) > 1:
+        logger.info(f"Found {len(in_file)} {name} files in {path} (Expected 1).")
+        sys.exit(1)
+
+    in_file = in_file[0]
+
+    lsd_from_filename = int(in_file.stem[-4:])
+    if lsd != lsd_from_filename:
+        logger.error(
+            f"Found file for LSD {lsd} when expecting LSD {lsd_from_filename}: {in_file}"
+        )
+        sys.exit(1)
+
+    full_out_dir = Path(out_dir) / rev / str(lsd)
+    out_file = full_out_dir / f"{file_out_name}_{lsd}.h5"
+    if out_file.is_file() and not force:
+        logger.debug(
+            f"Skipping {rev} {name} file for lsd {lsd}: {in_file}, outfile: {out_file}_{lsd}.h5"
+        )
+        return None
+    logger.info(
+        f"Processing {rev} {name} file for lsd {lsd}: {in_file}, outfile: {out_file}_{lsd}.h5"
+    )
+    return {"in_file": in_file, "full_out_dir": full_out_dir, "out_file": out_file}
+
+
+def process(in_file, full_out_dir, out_file, container, **kwargs):
+    Path(full_out_dir).mkdir(parents=True, exist_ok=True)
+    rm = container.from_file(in_file, **kwargs)
+    rm.to_disk(out_file)
 
 
 if __name__ == "__main__":
