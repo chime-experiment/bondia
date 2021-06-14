@@ -9,35 +9,39 @@ from draco.core import containers
 
 dir = "/project/rpp-chime/chime/chime_processed/daily"
 out_dir = "/project/rpp-chime/chime/chime_processed/validation_preprocess"
-force = False
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-@click.command(help="Just print number of files that would get processed.")
+@click.group()
+def cli():
+    """Preprocessing of daily pipeline products for daily validation."""
+
+
+@cli.command(help="Just print number of files that would get processed.")
 def dryrun():
-    total = list_files()
+    total = len(list_files())
     print(f"Would have processed {total} files.")
     if total == 0:
         sys.exit(1)
 
 
-@click.command()
+@cli.command()
 @click.option(
     "--force/--noforce",
     help="Overwrite existing files.",
     default=False,
     show_default=True,
 )
-def run():
-    todo_list = list_files()
+def run(force):
+    todo_list = list_files(force)
     for d in todo_list:
         process(**d)
     print(f"Processed {len(todo_list)} files.")
 
 
-def list_files():
+def list_files(force=False):
     rev_dirs = Path(dir).glob("rev_*")
     todo_list = []
     for rev_dir in rev_dirs:
@@ -70,6 +74,7 @@ def list_files():
                     "ringmap",
                     "ringmap_lsd_*.h5",
                     "ringmap_validation_freqs_lsd",
+                    force,
                 )
                 if out is not None:
                     out.update(
@@ -87,6 +92,7 @@ def list_files():
                     "ringmap_intercyl",
                     "ringmap_intercyl_lsd_*.h5",
                     "ringmap_intercyl_validation_freqs_lsd",
+                    force,
                 )
                 if out is not None:
                     out.update(
@@ -104,6 +110,7 @@ def list_files():
                     "sensitivity",
                     "sensitivity_lsd_*.h5",
                     "sensitivity_validation_lsd",
+                    force,
                 )
                 if out is not None:
                     out.update(
@@ -113,8 +120,8 @@ def list_files():
         return todo_list
 
 
-def check_file(rev, lsd, path, name, file_name, file_out_name):
-    in_file = path.glob(file_name)
+def check_file(rev, lsd, path, name, file_name, file_out_name, force):
+    in_file = list(path.glob(file_name))
     if not in_file:
         logger.info(f"Found 0 {name} files in {path} (Expected 1).")
         return None
@@ -151,4 +158,4 @@ def process(in_file, full_out_dir, out_file, container, **kwargs):
 
 
 if __name__ == "__main__":
-    run()
+    cli()
