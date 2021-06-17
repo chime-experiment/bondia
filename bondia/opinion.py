@@ -106,6 +106,23 @@ def get_days_with_opinion(revision, user):
 
 
 def sort_by_num_opinions(revision, lsds):
+    """
+    Sort LSDs by number of opinions.
+
+    Parameters
+    ----------
+    revision : str
+        Revision name (e.g. `rev_01`).
+    lsds : List[:class:`Day`]
+        Days to sort.
+
+    Returns
+    -------
+    sorted_lsds : List[:class:`Day`]
+        The same as `lsds` but sorted by number of opinions found in the database for the given `revision`.
+    """
+
+    # Get number of opinions for each lsd in the list for the given revision
     results = (
         DataFlagOpinion.select(
             DataFlagOpinion.lsd, fn.COUNT(DataFlagOpinion.id).alias("count")
@@ -121,12 +138,13 @@ def sort_by_num_opinions(revision, lsds):
     lsds = {day.lsd: day for day in lsds}
     sort_keys = [(r.count, r.lsd) for r in results]
     _, lsd_keys = zip(*sort_keys)
+    lsd_keys = list(lsd_keys)
 
     # add the days witout opinions
     for lsd in lsds.keys():
         if lsd not in lsd_keys:
             lsd_keys.append(lsd)
-            sort_keys.append((lsd, 0))
+            sort_keys.append((0, lsd))
 
     sort_keys.sort()
 
