@@ -158,6 +158,9 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
             # draco.core.containers.RFIMask. The first is true for data free of RFI,
             # the second is true for data affected by RFI.
             if isinstance(rfi_container, RFIMask):
+                logger.debug(
+                    f"Inverting rfi mask, because container is a {type(rfi_container)}."
+                )
                 rfi = ~rfi
 
             # calculate percentage masked to print later
