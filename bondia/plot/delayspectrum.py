@@ -43,6 +43,7 @@ class DelaySpectrumPlot(HeatMapPlot):
         self.height = 400
 
     @param.depends(
+        "revision",
         "lsd",
         "transpose",
         "logarithmic_colorscale",
