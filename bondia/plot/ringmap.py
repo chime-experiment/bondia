@@ -84,7 +84,7 @@ class RingMapPlot(RaHeatMapPlot, Reader):
         elif not os.path.isfile(self._stack_path):
             raise DataError(f"Ringmap stack file not found in path {self._stack_path}.")
 
-    @param.depends("lsd", watch=True)
+    @param.depends("lsd", "revision", watch=True)
     def update_freqs(self):
         if self.lsd is None:
             # Anyways make sure watchers are triggered

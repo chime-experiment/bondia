@@ -79,7 +79,7 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
                     self.param.trigger("colormap_range")
                 self.colormap_range = self.zlim_estimate
 
-    @param.depends("lsd", watch=True)
+    @param.depends("lsd", "revision", watch=True)
     def update_pol(self):
         if self.lsd is None:
             return
@@ -94,6 +94,7 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
             value = self.mean_pol_text
         self.param["polarization"].objects = objects
         self.polarization = value
+        self.param.trigger("polarization")
 
     @param.depends(
         "lsd",
