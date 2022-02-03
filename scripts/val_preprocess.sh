@@ -21,6 +21,6 @@ fi
 
 set -e
 # Only submit if there are files waiting to be processed.
-python "$ENV"/daily_validation_preprocessing/val_preprocess.py tryrun &> "$PROCESSED"/validation_preprocess/jobout.log
+python "$ENV"/daily_validation_preprocessing/val_preprocess.py dryrun &> "$PROCESSED"/validation_preprocess/jobout.log
 
 sbatch REVISION="$REVISION" "$ENV"/daily_validation_preprocessing/val_preprocess.sbatch

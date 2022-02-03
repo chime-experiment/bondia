@@ -7,7 +7,7 @@ from pathlib import Path
 from ch_pipeline.core import containers as ccontainers
 from draco.core import containers
 
-dir = "/project/rpp-chime/chime/chime_processed/daily"
+in_dir = "/project/rpp-chime/chime/chime_processed/daily"
 out_dir = "/project/rpp-chime/chime/chime_processed/validation_preprocess"
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ def run(force):
 
 
 def list_files(force=False):
-    rev_dirs = Path(dir).glob("rev_*")
+    rev_dirs = Path(in_dir).glob("rev_*")
     todo_list = []
     for rev_dir in rev_dirs:
         if not rev_dir.is_dir():
