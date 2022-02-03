@@ -7,8 +7,13 @@
 #SBATCH --time=0-04:00:00
 #SBATCH --job-name=chp/validation-preprocessing
 
-source /project/rpp-krs/chime/chime_processed/daily/rev_03/venv/bin/activate
+CHIME="/project/rpp-chime/chime"
+PROCESSED="$CHIME"/chime_processed
+ENV="$CHIME"/chime_env
+
+REVISION="${REVISION:-$(ls "$PROCESSED"/daily | tail -n 1)}"
+source "$PROCESSED"/daily/"$REVISION"/venv/bin/activate
 
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
-srun python /project/rpp-chime/chime/chime_env/daily_validation_preprocessing/val_preprocess.py run &> /project/rpp-chime/chime/chime_processed/validation_preprocess/jobout.log
+srun python "$ENV"/daily_validation_preprocessing/val_preprocess.py run &> "$PROCESSED"/validation_preprocess/jobout.log
