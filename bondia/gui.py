@@ -151,8 +151,8 @@ class BondiaGui(param.Parameterized):
             self._day_stats[0] = hv.Table(
                 (
                     keys,
-                    [num_opinions_rev for key in keys],
-                    [num_opinions_rest for key in keys],
+                    [num_opinions_rev[key] for key in keys],
+                    [num_opinions_rest[key] for key in keys],
                 ),
                 ["Decision", f"{self.revision}"],
                 "All other revisions",
