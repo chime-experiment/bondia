@@ -43,31 +43,8 @@ jobs:
 
     - name: Install apt dependencies
       run: |
+        sudo apt update
         sudo apt-get install -y libhdf5-serial-dev libopenmpi-dev libcfitsio-dev
-
-    # Todo: This is a public repo, but chimedb_config uses ssh for this dependency.
-    - name: Clone chimedb
-      uses: actions/checkout@v2
-      with:
-        repository: chime-experiment/chimedb
-        token: ${{ secrets.ACCESS_TOKEN }}
-        path: "chimedb"
-
-    # Todo: This is a public repo, but ch_util uses ssh for this dependency.
-    - name: Clone chimedb_di
-      uses: actions/checkout@v2
-      with:
-        repository: chime-experiment/chimedb_di
-        token: ${{ secrets.ACCESS_TOKEN }}
-        path: "chimedb_di"
-
-    # Todo: This is a public repo, but ch_util uses ssh for this dependency.
-    - name: Clone chimedb_dataflag
-      uses: actions/checkout@v2
-      with:
-        repository: chime-experiment/chimedb_dataflag
-        token: ${{ secrets.ACCESS_TOKEN }}
-        path: "chimedb_dataflag"
 
     - name: Clone chimedb_config from private repo
       uses: actions/checkout@v2
@@ -75,20 +52,6 @@ jobs:
         repository: chime-experiment/chimedb_config
         token: ${{ secrets.ACCESS_TOKEN }}
         path: "chimedb_config"
-
-    - name: Clone ch_util from private repo
-      uses: actions/checkout@v2
-      with:
-        repository: chime-experiment/ch_util
-        token: ${{ secrets.ACCESS_TOKEN }}
-        path: "ch_util"
-
-    - name: Clone ch_pipeline from private repo
-      uses: actions/checkout@v2
-      with:
-        repository: chime-experiment/ch_pipeline
-        token: ${{ secrets.ACCESS_TOKEN }}
-        path: "ch_pipeline"
 
     - uses: actions/cache@v2
       with:
@@ -103,15 +66,11 @@ jobs:
 
     - name: Install python packages from private repos
       run: |
-        pip install --use-deprecated=legacy-resolver ./ch_util ./chimedb ./chimedb_di ./chimedb_dataflag ./chimedb_config ./ch_pipeline
+        pip install --use-deprecated=legacy-resolver ./chimedb_config
 
     - name: Remove cloned repositories
       run: |
-        rm -rf chimedb
-        rm -rf chimedb_di
-        rm -rf chimedb_dataflag
         rm -rf chimedb_config
-        rm -rf ch_util
 
     - name: Install bondia dependencies
       run: |
