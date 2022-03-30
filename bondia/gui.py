@@ -147,11 +147,12 @@ class BondiaGui(param.Parameterized):
             )
             num_opinions_rev.update({"total": sum(num_opinions_rev.values())})
             num_opinions_rest.update({"total": sum(num_opinions_rest.values())})
+            keys = list(set(num_opinions_rev.keys()) | set(num_opinions_rest.keys()))
             self._day_stats[0] = hv.Table(
                 (
-                    list(set(num_opinions_rev.keys()) | set(num_opinions_rest.keys())),
-                    list(num_opinions_rev.values()),
-                    list(num_opinions_rest.values()),
+                    keys,
+                    [num_opinions_rev[key] for key in keys],
+                    [num_opinions_rest[key] for key in keys],
                 ),
                 ["Decision", f"{self.revision}"],
                 "All other revisions",
