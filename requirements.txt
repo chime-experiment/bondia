@@ -14,4 +14,5 @@ numpy>=1.21.0
 panel==0.10.2
 param
 skyfield>=1.31
+setuptools==59.* #Numba requires setuptools < 60
 numba>=0.56.2
