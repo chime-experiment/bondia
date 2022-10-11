@@ -2,6 +2,7 @@ setuptools==59.* #Numba requires setuptools < 60
 bokeh>=2.2.3
 caput @ git+https://github.com/radiocosmology/caput.git
 chimedb @ git+https://github.com/chime-experiment/chimedb.git
+chimedb.config @ git+https://github.com/chime-experiment/chimedb_config.git
 chimedb.dataflag @ git+https://github.com/chime-experiment/chimedb_dataflag.git
 ch_pipeline @ git+https://github.com/chime-experiment/ch_pipeline.git
 ch_util @ git+https://github.com/chime-experiment/ch_util.git
