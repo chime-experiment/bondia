@@ -19,15 +19,21 @@ setuptools.setup(
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     author="The CHIME Collaboration",
-    author_email="rick@phas.ubc.ca",
+    author_email="lgray@phas.ubc.ca",
     description="CHIME Daily Validation",
     packages=setuptools.find_packages(),
-    scripts=["scripts/bondia-server"],
+    scripts=["bondia/scripts/bondia-server"],
     license="GPL v3.0",
     url="http://github.com/chime-experiment/bondia",
     install_requires=requires,
     package_data={
         "bondia.templates": ["material.html", "mwc.html", "mdl.html", "mdl_tabs.html"],
         "bondia": ["login.html"],
+        "bondia.scripts": [
+            "val_preprocess.py",
+            "val_preprocess.sbatch",
+            "val_preprocess.sh",
+        ],
     },
+    include_package_data=True,
 )
