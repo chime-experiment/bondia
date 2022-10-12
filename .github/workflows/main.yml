@@ -28,7 +28,7 @@ jobs:
     - name: Check code with black
       run: |
         black --check .
-        black --check scripts/bondia-server
+        black --check bondia/scripts/bondia-server
 
   run-tests:
 
