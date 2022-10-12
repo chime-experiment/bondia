@@ -1,2 +1,3 @@
 include versioneer.py
 include bondia/_version.py
+include bondia/scripts/*
