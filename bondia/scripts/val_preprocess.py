@@ -72,10 +72,20 @@ def list_files(force=False):
                     lsd,
                     lsd_dir,
                     "ringmap",
-                    "ringmap_lsd_*.zarr*",
+                    "ringmap_lsd_*.h5",
                     "ringmap_validation_freqs_lsd",
                     force,
                 )
+                if out is None:
+                    out = check_file(
+                        rev,
+                        lsd,
+                        lsd_dir,
+                        "ringmap",
+                        "ringmap_lsd_*.zarr*",
+                        "ringmap_validation_freqs_lsd",
+                        force,
+                    )
                 if out is not None:
                     out.update(
                         {
@@ -90,10 +100,20 @@ def list_files(force=False):
                     lsd,
                     lsd_dir,
                     "ringmap_intercyl",
-                    "ringmap_intercyl_lsd_*.zarr*",
+                    "ringmap_intercyl_lsd_*.h5",
                     "ringmap_intercyl_validation_freqs_lsd",
                     force,
                 )
+                if out is None:
+                    out = check_file(
+                        rev,
+                        lsd,
+                        lsd_dir,
+                        "ringmap_intercyl",
+                        "ringmap_intercyl_lsd_*.zarr*",
+                        "ringmap_intercyl_validation_freqs_lsd",
+                        force,
+                    )
                 if out is not None:
                     out.update(
                         {
