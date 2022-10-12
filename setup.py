@@ -29,5 +29,10 @@ setuptools.setup(
     package_data={
         "bondia.templates": ["material.html", "mwc.html", "mdl.html", "mdl_tabs.html"],
         "bondia": ["login.html"],
+        "bondia.scripts": [
+            "val_preprocess.py",
+            "val_preprocess.sbatch",
+            "val_preprocess.sh",
+        ],
     },
 )
