@@ -20,8 +20,14 @@ def cli():
 
 
 @cli.command(help="Just print number of files that would get processed.")
-def dryrun():
-    total = len(list_files())
+@click.option(
+    "--newest/--all",
+    help="Only process data for the most recent revision.",
+    default=True,
+    show_default=True,
+)
+def dryrun(newest):
+    total = len(list_files(most_recent_only=newest))
     print(f"Would have processed {total} files.")
     if total == 0:
         sys.exit(1)
@@ -34,15 +40,24 @@ def dryrun():
     default=False,
     show_default=True,
 )
-def run(force):
-    todo_list = list_files(force)
+@click.option(
+    "--newest/--all",
+    help="Only process data for the most recent revision.",
+    default=True,
+    show_default=True,
+)
+def run(force, newest):
+    todo_list = list_files(force, newest)
     for d in todo_list:
         process(**d)
     print(f"Processed {len(todo_list)} files.")
 
 
-def list_files(force=False):
-    rev_dirs = Path(in_dir).glob("rev_*")
+def list_files(force=False, most_recent_only=False):
+    rev_dirs = sorted(Path(in_dir).glob("rev_*"))
+    if most_recent_only:
+        rev_dirs = [rev_dirs[-1]]
+    logger.debug(f"Found revisions: {[i.name for i in rev_dirs]}")
     todo_list = []
     for rev_dir in rev_dirs:
         if not rev_dir.is_dir():
@@ -58,86 +73,86 @@ def list_files(force=False):
                 lsd = int(lsd_dir.name)
             except ValueError as err:
                 logger.debug(f"Skipping dir {lsd_dir}: {err}")
-            else:
-                if rev not in index:
-                    index[rev] = {}
-                if lsd in index[rev]:
-                    logger.error(f"Tried to add {lsd} twice")
-                    sys.exit(1)
+                continue
+            if rev not in index:
+                index[rev] = {}
+            if lsd in index[rev]:
+                logger.error(f"Tried to add {lsd} twice")
+                sys.exit(1)
 
-                ringmap_freqs = slice(399, 746, 346)
-                ringmap_pols = [0, 3]
+            ringmap_freqs = slice(399, 746, 345)
+            ringmap_pols = slice(0, 4, 3)
+            out = check_file(
+                rev,
+                lsd,
+                lsd_dir,
+                "ringmap",
+                "ringmap_lsd_*.h5",
+                "ringmap_validation_freqs_lsd",
+                force,
+            )
+            if out is None:
                 out = check_file(
                     rev,
                     lsd,
                     lsd_dir,
                     "ringmap",
-                    "ringmap_lsd_*.h5",
+                    "ringmap_lsd_*.zarr*",
                     "ringmap_validation_freqs_lsd",
                     force,
                 )
-                if out is None:
-                    out = check_file(
-                        rev,
-                        lsd,
-                        lsd_dir,
-                        "ringmap",
-                        "ringmap_lsd_*.zarr*",
-                        "ringmap_validation_freqs_lsd",
-                        force,
-                    )
-                if out is not None:
-                    out.update(
-                        {
-                            "container": ccontainers.RingMap,
-                            "freq_sel": ringmap_freqs,
-                            "pol_sel": ringmap_pols,
-                        }
-                    )
-                    todo_list.append(out)
+            if out is not None:
+                out.update(
+                    {
+                        "container": ccontainers.RingMap,
+                        "freq_sel": ringmap_freqs,
+                        "pol_sel": ringmap_pols,
+                    }
+                )
+                todo_list.append(out)
+            out = check_file(
+                rev,
+                lsd,
+                lsd_dir,
+                "ringmap_intercyl",
+                "ringmap_intercyl_lsd_*.h5",
+                "ringmap_intercyl_validation_freqs_lsd",
+                force,
+            )
+            if out is None:
                 out = check_file(
                     rev,
                     lsd,
                     lsd_dir,
                     "ringmap_intercyl",
-                    "ringmap_intercyl_lsd_*.h5",
+                    "ringmap_intercyl_lsd_*.zarr*",
                     "ringmap_intercyl_validation_freqs_lsd",
                     force,
                 )
-                if out is None:
-                    out = check_file(
-                        rev,
-                        lsd,
-                        lsd_dir,
-                        "ringmap_intercyl",
-                        "ringmap_intercyl_lsd_*.zarr*",
-                        "ringmap_intercyl_validation_freqs_lsd",
-                        force,
-                    )
-                if out is not None:
-                    out.update(
-                        {
-                            "container": ccontainers.RingMap,
-                            "freq_sel": ringmap_freqs,
-                            "pol_sel": ringmap_pols,
-                        }
-                    )
-                    todo_list.append(out)
-                out = check_file(
-                    rev,
-                    lsd,
-                    lsd_dir,
-                    "sensitivity",
-                    "sensitivity_lsd_*.h5",
-                    "sensitivity_validation_lsd",
-                    force,
+            if out is not None:
+                out.update(
+                    {
+                        "container": ccontainers.RingMap,
+                        "freq_sel": ringmap_freqs,
+                        "pol_sel": ringmap_pols,
+                    }
                 )
-                if out is not None:
-                    out.update(
-                        {"container": containers.SystemSensitivity, "pol_sel": [0, 2]}
-                    )
-                    todo_list.append(out)
-        return todo_list
+                todo_list.append(out)
+            out = check_file(
+                rev,
+                lsd,
+                lsd_dir,
+                "sensitivity",
+                "sensitivity_lsd_*.h5",
+                "sensitivity_validation_lsd",
+                force,
+            )
+            if out is not None:
+                out.update(
+                    {"container": containers.SystemSensitivity, "pol_sel": [0, 2]}
+                )
+                todo_list.append(out)
+    return todo_list
 
 
 def check_file(rev, lsd, path, name, file_name, file_out_name, force):
@@ -150,10 +165,10 @@ def check_file(rev, lsd, path, name, file_name, file_out_name, force):
         sys.exit(1)
 
     in_file = in_file[0]
-    suffixes = in_file.stem.split(".")
-
+    suffixes = in_file.name.split(".")
     lsd_from_filename = int(suffixes[0][-4:])
     new_ext = ".".join(suffixes[1:])
+
     if lsd != lsd_from_filename:
         logger.error(
             f"Found file for LSD {lsd} when expecting LSD {lsd_from_filename}: {in_file}"
