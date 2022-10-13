@@ -130,8 +130,10 @@ def check_file(rev, lsd, path, name, file_name, file_out_name, force):
         sys.exit(1)
 
     in_file = in_file[0]
+    suffixes = in_file.stem.split(".")
 
-    lsd_from_filename = int(in_file.stem[-4:])
+    lsd_from_filename = int(suffixes[0][-4:])
+    new_ext = ".".join(suffixes[1:])
     if lsd != lsd_from_filename:
         logger.error(
             f"Found file for LSD {lsd} when expecting LSD {lsd_from_filename}: {in_file}"
@@ -139,14 +141,14 @@ def check_file(rev, lsd, path, name, file_name, file_out_name, force):
         sys.exit(1)
 
     full_out_dir = Path(out_dir) / rev / str(lsd)
-    out_file = full_out_dir / f"{file_out_name}_{lsd}.h5"
+    out_file = full_out_dir / f"{file_out_name}_{lsd}.{new_ext}"
     if out_file.is_file() and not force:
         logger.debug(
-            f"Skipping {rev} {name} file for lsd {lsd}: {in_file}, outfile: {out_file}_{lsd}.h5"
+            f"Skipping {rev} {name} file for lsd {lsd}: {in_file}, outfile: {out_file}_{lsd}.{new_ext}"
         )
         return None
     logger.info(
-        f"Processing {rev} {name} file for lsd {lsd}: {in_file}, outfile: {out_file}_{lsd}.h5"
+        f"Processing {rev} {name} file for lsd {lsd}: {in_file}, outfile: {out_file}_{lsd}.{new_ext}"
     )
     return {"in_file": in_file, "full_out_dir": full_out_dir, "out_file": out_file}
 
