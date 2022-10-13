@@ -82,25 +82,26 @@ def list_files(force=False, most_recent_only=False):
 
             ringmap_freqs = slice(399, 746, 345)
             ringmap_pols = slice(0, 4, 3)
+
             out = check_file(
                 rev,
                 lsd,
                 lsd_dir,
                 "ringmap",
-                "ringmap_lsd_*.h5",
+                "ringmap_lsd_*.*", #h5",
                 "ringmap_validation_freqs_lsd",
                 force,
             )
-            if out is None:
-                out = check_file(
-                    rev,
-                    lsd,
-                    lsd_dir,
-                    "ringmap",
-                    "ringmap_lsd_*.zarr*",
-                    "ringmap_validation_freqs_lsd",
-                    force,
-                )
+            # if out is None:
+            #     out = check_file(
+            #         rev,
+            #         lsd,
+            #         lsd_dir,
+            #         "ringmap",
+            #         "ringmap_lsd_*.zarr*",
+            #         "ringmap_validation_freqs_lsd",
+            #         force,
+            #     )
             if out is not None:
                 out.update(
                     {
@@ -115,20 +116,20 @@ def list_files(force=False, most_recent_only=False):
                 lsd,
                 lsd_dir,
                 "ringmap_intercyl",
-                "ringmap_intercyl_lsd_*.h5",
+                "ringmap_intercyl_lsd_*.*", #h5",
                 "ringmap_intercyl_validation_freqs_lsd",
                 force,
             )
-            if out is None:
-                out = check_file(
-                    rev,
-                    lsd,
-                    lsd_dir,
-                    "ringmap_intercyl",
-                    "ringmap_intercyl_lsd_*.zarr*",
-                    "ringmap_intercyl_validation_freqs_lsd",
-                    force,
-                )
+            # if out is None:
+            #     out = check_file(
+            #         rev,
+            #         lsd,
+            #         lsd_dir,
+            #         "ringmap_intercyl",
+            #         "ringmap_intercyl_lsd_*.zarr*",
+            #         "ringmap_intercyl_validation_freqs_lsd",
+            #         force,
+            #     )
             if out is not None:
                 out.update(
                     {
@@ -152,6 +153,7 @@ def list_files(force=False, most_recent_only=False):
                     {"container": containers.SystemSensitivity, "pol_sel": [0, 2]}
                 )
                 todo_list.append(out)
+
     return todo_list
 
 
@@ -165,9 +167,8 @@ def check_file(rev, lsd, path, name, file_name, file_out_name, force):
         sys.exit(1)
 
     in_file = in_file[0]
-    suffixes = in_file.name.split(".")
+    suffixes = in_file.name.split(".", 1)
     lsd_from_filename = int(suffixes[0][-4:])
-    new_ext = ".".join(suffixes[1:])
 
     if lsd != lsd_from_filename:
         logger.error(
@@ -176,21 +177,21 @@ def check_file(rev, lsd, path, name, file_name, file_out_name, force):
         sys.exit(1)
 
     full_out_dir = Path(out_dir) / rev / str(lsd)
-    out_file = full_out_dir / f"{file_out_name}_{lsd}.{new_ext}"
+    out_file = full_out_dir / f"{file_out_name}_{lsd}.h5"
     if out_file.is_file() and not force:
         logger.debug(
-            f"Skipping {rev} {name} file for lsd {lsd}: {in_file}, outfile: {out_file}_{lsd}.{new_ext}"
+            f"Skipping {rev} {name} file for lsd {lsd}: {in_file}, outfile: {out_file}.h5"
         )
         return None
     logger.info(
-        f"Processing {rev} {name} file for lsd {lsd}: {in_file}, outfile: {out_file}_{lsd}.{new_ext}"
+        f"Processing {rev} {name} file for lsd {lsd}: {in_file}, outfile: {out_file}.h5"
     )
     return {"in_file": in_file, "full_out_dir": full_out_dir, "out_file": out_file}
 
 
 def process(in_file, full_out_dir, out_file, container, **kwargs):
     Path(full_out_dir).mkdir(parents=True, exist_ok=True)
-    rm = container.from_file(str(in_file), **kwargs)
+    rm = container.from_file(in_file, **kwargs)
     rm.to_disk(out_file)
 
 
