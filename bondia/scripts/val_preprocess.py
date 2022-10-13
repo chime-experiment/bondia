@@ -175,7 +175,7 @@ def check_file(rev, lsd, path, name, file_name, file_out_name, force):
 
 def process(in_file, full_out_dir, out_file, container, **kwargs):
     Path(full_out_dir).mkdir(parents=True, exist_ok=True)
-    rm = container.from_file(in_file, **kwargs)
+    rm = container.from_file(str(in_file), **kwargs)
     rm.to_disk(out_file)
 
 

@@ -12,7 +12,7 @@ PROCESSED="$CHIME"/chime_processed
 ENV="$CHIME"/chime_env
 
 module use "$ENV"/modules/modulefiles/
-module load chime/python/2021.03
+module load chime/python/2022.06
 
 REVISION="${REVISION:-$(ls "$PROCESSED"/daily | tail -n 1)}"
 source "$PROCESSED"/daily/"$REVISION"/venv/bin/activate
