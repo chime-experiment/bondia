@@ -5,10 +5,10 @@ import param
 
 from chimedb.dataflag.orm import DataFlagOpinion
 
-from . import opinion
-from .plot.delayspectrum import DelaySpectrumPlot
-from .plot.ringmap import RingMapPlot
-from .plot.sensitivity import SensitivityPlot
+from bondia import opinion
+from bondia.plot.delayspectrum import DelaySpectrumPlot
+from bondia.plot.ringmap import RingMapPlot
+from bondia.plot.sensitivity import SensitivityPlot
 
 
 logger = logging.getLogger(__name__)

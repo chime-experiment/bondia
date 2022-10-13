@@ -6,8 +6,8 @@ import param
 from ch_util.ephemeris import csd_to_unix, unix_to_csd
 from caput.config import Reader, Property
 
-from .plot import BondiaPlot
-from ..util.flags import get_flags_cached, get_flags
+from bondia.plot.base import BondiaPlot
+from bondia.util.flags import get_flags_cached, get_flags
 
 
 logger = logging.getLogger(__name__)

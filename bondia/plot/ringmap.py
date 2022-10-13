@@ -15,9 +15,8 @@ from ch_pipeline.core import containers as ccontainers
 from ch_util import tools
 from ch_util.ephemeris import csd_to_unix, unix_to_csd, skyfield_wrapper, chime
 
-from .heatmap import RaHeatMapPlot
-
-from ..util.exception import DataError
+from bondia.plot.heatmap import RaHeatMapPlot
+from bondia.util.exception import DataError
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +81,7 @@ class RingMapPlot(RaHeatMapPlot, Reader):
             self.template_subtraction = False
             self.param["template_subtraction"].constant = True
         elif not os.path.isfile(self._stack_path):
-            raise DataError(f"Ringmap stack file not found in path {self._stack_path}.")
+            raise IOError(f"Ringmap stack file not found in path {self._stack_path}.")
 
     @param.depends("lsd", "revision", watch=True)
     def update_freqs(self):

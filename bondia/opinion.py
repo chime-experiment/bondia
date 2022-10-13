@@ -8,7 +8,7 @@ from peewee import fn
 from chimedb.dataflag import DataFlagOpinion, DataFlagOpinionType, DataRevision
 from chimedb.core.mediawiki import MediaWikiUser
 
-from . import __version__
+from bondia import __version__
 
 logger = logging.getLogger(__name__)
 
