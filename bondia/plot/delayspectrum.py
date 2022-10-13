@@ -8,8 +8,8 @@ import numpy as np
 from holoviews.plotting.util import process_cmap
 from matplotlib import cm as matplotlib_cm
 
-from .heatmap import HeatMapPlot
-from ..util.exception import DataError
+from bondia.plot.heatmap import HeatMapPlot
+from bondia.util.exception import DataError
 
 logger = logging.getLogger(__name__)
 

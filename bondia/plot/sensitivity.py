@@ -12,10 +12,9 @@ from caput.config import Reader, Property
 from ch_pipeline.core.containers import RFIMask
 from ch_util.ephemeris import chime, csd, skyfield_wrapper, csd_to_unix, unix_to_csd
 
-from .heatmap import RaHeatMapPlot
-
-from ..util.exception import DataError
-from ..util.plotting import hv_image_with_gaps
+from bondia.plot.heatmap import RaHeatMapPlot
+from bondia.util.exception import DataError
+from bondia.util.plotting import hv_image_with_gaps
 
 logger = logging.getLogger(__name__)
 

@@ -12,8 +12,8 @@ from caput.config import Property, Reader
 from ch_pipeline.core.containers import RingMap
 from draco.core.containers import DelaySpectrum, RFIMask, SystemSensitivity
 
-from .util.day import Day
-from .util.exception import DataError
+from bondia.util.day import Day
+from bondia.util.exception import DataError
 
 logger = logging.getLogger(__name__)
 

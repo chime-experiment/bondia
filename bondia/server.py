@@ -5,9 +5,9 @@ from jinja2.exceptions import TemplateNotFound
 import logging
 import panel as pn
 
-from .data import DataLoader
-from .util.exception import ConfigError
-from .gui import BondiaGui
+from bondia.data import DataLoader
+from bondia.util.exception import ConfigError
+from bondia.gui import BondiaGui
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
