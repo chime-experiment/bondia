@@ -196,6 +196,9 @@ def get_day_without_opinion(last_selected_day, days, revision, user):
         day without an opinion. If there is no day without opinion by that user, the last selected day is returned.
         If `last_selected_day` is None, the latest day without an opinion by that user will be returned.
     """
+    if not days:
+        # No days available
+        return None
     user = user.capitalize()
     days_with_opinion = get_days_with_opinion(revision, user)
     logger.debug(
