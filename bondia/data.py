@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 FILE_TYPES = {
     "delayspectrum": "delayspectrum_lsd_*.h5",
+    "delayspectrum_hpf": "delayspectrum_hpf_lsd_*.h5",
     "ringmap": "ringmap_validation_freqs_lsd_*.h5",
     "ringmap_intercyl": "ringmap_intercyl_validation_freqs_lsd_*.h5",
     "sensitivity": "sensitivity_validation_lsd_*.h5",
@@ -26,6 +27,7 @@ FILE_TYPES = {
 }
 CONTAINER_TYPES: Dict[str, Type[Union[DelaySpectrum, RingMap]]] = {
     "delayspectrum": DelaySpectrum,
+    "delayspectrum_hpf": DelaySpectrum,
     "ringmap": RingMap,
     "ringmap_intercyl": RingMap,
     "sensitivity": SystemSensitivity,
@@ -266,18 +268,21 @@ class LSD:
         for file_type, file_type_glob in FILE_TYPES.items():
             file = glob.glob(os.path.join(path, file_type_glob))
             if len(file) != 1:
-                raise DataError(
+                # raise DataError(
+                logger.warn(
                     f"Found {len(file)} {file_type} files in {path} (Expected 1)."
                 )
-            file = file[0]
+                file = None
+            else:
+                file = file[0]
 
-            logger.debug(f"Found {rev} file for lsd {day}: {file}")
+                logger.debug(f"Found {rev} file for lsd {day}: {file}")
 
-            lsd = int(os.path.splitext(os.path.basename(file))[0][-4:])
-            if lsd != day.lsd:
-                raise DataError(
-                    f"Found file for LSD {lsd} when expecting LSD {day.lsd}: {file}"
-                )
+                lsd = int(os.path.splitext(os.path.basename(file))[0][-4:])
+                if lsd != day.lsd:
+                    raise DataError(
+                        f"Found file for LSD {lsd} when expecting LSD {day.lsd}: {file}"
+                    )
 
             self.files[file_type] = file
             setattr(self, file_type, None)

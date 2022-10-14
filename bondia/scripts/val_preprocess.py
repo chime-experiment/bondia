@@ -88,7 +88,7 @@ def list_files(force=False, most_recent_only=False):
                 lsd,
                 lsd_dir,
                 "ringmap",
-                "ringmap_lsd_*.*", #h5",
+                "ringmap_lsd_*.*",
                 "ringmap_validation_freqs_lsd",
                 force,
             )
@@ -116,7 +116,7 @@ def list_files(force=False, most_recent_only=False):
                 lsd,
                 lsd_dir,
                 "ringmap_intercyl",
-                "ringmap_intercyl_lsd_*.*", #h5",
+                "ringmap_intercyl_lsd_*.*",
                 "ringmap_intercyl_validation_freqs_lsd",
                 force,
             )

@@ -14,7 +14,7 @@ from bondia.util.exception import DataError
 logger = logging.getLogger(__name__)
 
 
-class DelaySpectrumPlot(HeatMapPlot):
+class DelaySpectrumBase(HeatMapPlot):
     """
     Attributes
     ----------
@@ -35,12 +35,15 @@ class DelaySpectrumPlot(HeatMapPlot):
     def __init__(self, data, config, **params):
         self.data = data
         self.selections = None
-        HeatMapPlot.__init__(self, "Delay Spectrum", activated=True, **params)
+        self.__init_hook__(**params)
 
         # set default values
         self.transpose = True
         self.logarithmic_colorscale = True
         self.height = 400
+
+    def __init_hook__(self, *args, **kwargs):
+        self._fname = ""
 
     @param.depends(
         "revision",
@@ -56,7 +59,7 @@ class DelaySpectrumPlot(HeatMapPlot):
         if self.lsd is None:
             return panel.pane.Markdown("No data selected.")
         try:
-            spectrum = self.data.load_file(self.revision, self.lsd, "delayspectrum")
+            spectrum = self.data.load_file(self.revision, self.lsd, self._fname)
         except DataError as err:
             return panel.pane.Markdown(
                 f"Error: {str(err)}. Please report this problem."
@@ -187,3 +190,15 @@ class DelaySpectrumPlot(HeatMapPlot):
         imgs.opts(merge_tools=True, shared_axes=False)
         all_img = panel.Row(imgs, width_policy="max")
         return all_img
+
+
+class DelaySpectrumPlot(DelaySpectrumBase):
+    def __init_hook__(self, **params):
+        HeatMapPlot.__init__(self, "Delay Spectrum", activated=True, **params)
+        self._fname = "delayspectrum"
+
+
+class DelaySpectrumPlotHPF(DelaySpectrumBase):
+    def __init_hook__(self, **params):
+        HeatMapPlot.__init__(self, "Delay Spectrum HPF", activated=True, **params)
+        self._fname = "delayspectrum_hpf"
