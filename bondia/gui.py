@@ -6,7 +6,7 @@ import param
 from chimedb.dataflag.orm import DataFlagOpinion
 
 from bondia import opinion
-from bondia.plot.delayspectrum import DelaySpectrumPlot
+from bondia.plot.delayspectrum import DelaySpectrumPlot, DelaySpectrumPlotHPF
 from bondia.plot.ringmap import RingMapPlot
 from bondia.plot.sensitivity import SensitivityPlot
 
@@ -216,12 +216,6 @@ class BondiaGui(param.Parameterized):
         return pn.indicators.LoadingSpinner(value=busy, width=20, height=20)
 
     def populate_template(self, template):
-        self._plot = [
-            DelaySpectrumPlot(self._data, self._config_plots.get("delayspectrum", {})),
-            SensitivityPlot(self._data, self._config_plots.get("sensitivity", {})),
-            RingMapPlot(self._data, self._config_plots.get("ringmap", {})),
-        ]
-
         # Checkbox to show only days w/o opinion
         template.add_panel("day_filter_opinion_checkbox", self.param["filter_lsd"])
         # Checkbox to sort days by number of opinions
@@ -285,6 +279,15 @@ class BondiaGui(param.Parameterized):
 
         # Trigger opinion UI callbacks once now
         self.param.trigger("lsd")
+
+        self._plot = [
+            DelaySpectrumPlot(self._data, self._config_plots.get("delayspectrum", {})),
+            DelaySpectrumPlotHPF(
+                self._data, self._config_plots.get("delayspectrum_hpf", {})
+            ),
+            SensitivityPlot(self._data, self._config_plots.get("sensitivity", {})),
+            RingMapPlot(self._data, self._config_plots.get("ringmap", {})),
+        ]
 
         for plot in self._plot:
             plot.revision = self.revision
@@ -368,7 +371,7 @@ class BondiaGui(param.Parameterized):
         template = pn.Template(self._template)
 
         template.add_variable("subtitle", "CHIME Daily Validation")
-        template.add_variable("app_title", "BON DIA")
+        template.add_variable("app_title", "BONDIA")
         template.add_variable("username", self.current_user)
         template.add_variable("num_unvalidated", 19)
         template.add_variable("root_url", self._root_url)
