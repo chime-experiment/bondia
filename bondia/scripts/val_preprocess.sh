@@ -7,12 +7,13 @@ PROCESSED="$CHIME"/chime_processed
 ENV="$CHIME"/chime_env
 
 REVISION="${REVISION:-$(ls "$PROCESSED"/daily | tail -n 1)}"
-source "$PROCESSED"/daily/"$REVISION"/venv/bin/activate
-
+# source "$PROCESSED"/daily/"$REVISION"/venv/bin/activate
+source "$ENV"/daily_validation_preprocessing/.bondia_preprocess/venv/bin/activate
 # Only submit if no slurm job already queued.
 JOB_NAME="chp/validation"
 
-squeue -u $USER | grep $JOB_NAME
+# squeue -u $USER | grep $JOB_NAME
+squeue -A rpp-chime_cpu | grep $JOB_NAME
 if [ ${PIPESTATUS[1]} -eq 0 ]
 then
   echo "There already is a slurm job with name $JOB_NAME"

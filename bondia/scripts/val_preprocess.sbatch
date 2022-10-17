@@ -2,8 +2,8 @@
 #SBATCH --account=rpp-chime
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1 # number of MPI processes
-#SBATCH --cpus-per-task=6 # number of OpenMP processes
-#SBATCH --mem=192000M # memory per node
+#SBATCH --cpus-per-task=2 # number of OpenMP processes
+#SBATCH --mem=8G # memory per node
 #SBATCH --time=0-04:00:00
 #SBATCH --job-name=chp/validation-preprocessing
 #SBATCH --export=ALL
