@@ -65,6 +65,12 @@ def list_files(force=False, most_recent_only=False):
             continue
         rev = rev_dir.parts[-1]
 
+        # TODO: clean this up
+        if rev in {"rev_00", "rev_01", "rev_02", "rev_03", "rev_04"}:
+            ringmap_container = ccontainers.RingMap
+        else:
+            ringmap_container = containers.RingMap
+
         lsd_dirs = sorted(rev_dir.glob("*"))
 
         index = {}
@@ -82,6 +88,7 @@ def list_files(force=False, most_recent_only=False):
 
             ringmap_freqs = slice(399, 746, 345)
             ringmap_pols = slice(0, 4, 3)
+            sensitivity_pols = slice(0, 3, 2)
 
             out = check_file(
                 rev,
@@ -92,20 +99,10 @@ def list_files(force=False, most_recent_only=False):
                 "ringmap_validation_freqs_lsd",
                 force,
             )
-            # if out is None:
-            #     out = check_file(
-            #         rev,
-            #         lsd,
-            #         lsd_dir,
-            #         "ringmap",
-            #         "ringmap_lsd_*.zarr*",
-            #         "ringmap_validation_freqs_lsd",
-            #         force,
-            #     )
             if out is not None:
                 out.update(
                     {
-                        "container": ccontainers.RingMap,
+                        "container": ringmap_container,
                         "freq_sel": ringmap_freqs,
                         "pol_sel": ringmap_pols,
                     }
@@ -120,20 +117,10 @@ def list_files(force=False, most_recent_only=False):
                 "ringmap_intercyl_validation_freqs_lsd",
                 force,
             )
-            # if out is None:
-            #     out = check_file(
-            #         rev,
-            #         lsd,
-            #         lsd_dir,
-            #         "ringmap_intercyl",
-            #         "ringmap_intercyl_lsd_*.zarr*",
-            #         "ringmap_intercyl_validation_freqs_lsd",
-            #         force,
-            #     )
             if out is not None:
                 out.update(
                     {
-                        "container": ccontainers.RingMap,
+                        "container": ringmap_container,
                         "freq_sel": ringmap_freqs,
                         "pol_sel": ringmap_pols,
                     }
@@ -150,7 +137,10 @@ def list_files(force=False, most_recent_only=False):
             )
             if out is not None:
                 out.update(
-                    {"container": containers.SystemSensitivity, "pol_sel": [0, 2]}
+                    {
+                        "container": containers.SystemSensitivity,
+                        "pol_sel": sensitivity_pols,
+                    }
                 )
                 todo_list.append(out)
 
@@ -180,11 +170,11 @@ def check_file(rev, lsd, path, name, file_name, file_out_name, force):
     out_file = full_out_dir / f"{file_out_name}_{lsd}.h5"
     if out_file.is_file() and not force:
         logger.debug(
-            f"Skipping {rev} {name} file for lsd {lsd}: {in_file}, outfile: {out_file}.h5"
+            f"Skipping {rev} {name} file for lsd {lsd}: {in_file}, outfile: {out_file}"
         )
         return None
     logger.info(
-        f"Processing {rev} {name} file for lsd {lsd}: {in_file}, outfile: {out_file}.h5"
+        f"Processing {rev} {name} file for lsd {lsd}: {in_file}, outfile: {out_file}"
     )
     return {"in_file": in_file, "full_out_dir": full_out_dir, "out_file": out_file}
 
