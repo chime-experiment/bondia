@@ -353,6 +353,11 @@ def get_user_stats(zero=True):
             .get()
             .user_name
         )
+        # Make sure we get a proper string back
+        # NOTE: this is needed due a bug with how MediaWikiUser
+        # formats user names
+        if "bytearray" in user_name:
+            user_name = user_name.replace("bytearray(b'", "").strip("')")
         count = (
             DataFlagOpinion.select().where(DataFlagOpinion.user_id == user_id).count()
         )
