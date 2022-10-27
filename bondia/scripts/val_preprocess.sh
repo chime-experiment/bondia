@@ -28,4 +28,5 @@ set -e
 # Only submit if there are files waiting to be processed.
 python "$ENV"/daily_validation_preprocessing/val_preprocess.py dryrun &> "$PROCESSED"/validation_preprocess/jobout.log
 
-sbatch "$ENV"/daily_validation_preprocessing/val_preprocess.sbatch
+cd "$ENV"/daily_validation_preprocessing/
+sbatch val_preprocess.sbatch
