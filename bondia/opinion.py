@@ -327,7 +327,11 @@ def get_notes_for_day(day):
     for e in entries:
         n = e.notes
         if n is not None and n != "":
-            notes[e.revision.name][e.user.user_name.lower()] = (e.decision, n)
+            user_name = e.user.user_name
+            if "bytearray" in user_name:
+                user_name = user_name.replace("bytearray(b'", "").strip("')")
+            # notes[e.revision.name][e.user.user_name.lower()] = (e.decision, n)
+            notes[e.revision.name][user_name] = (e.decision, n)
     return notes
 
 
@@ -354,8 +358,7 @@ def get_user_stats(zero=True):
             .user_name
         )
         # Make sure we get a proper string back
-        # NOTE: this is needed due a bug with how MediaWikiUser
-        # formats user names
+        # NOTE: this is needed due a bug with mysql-connector-python
         if "bytearray" in user_name:
             user_name = user_name.replace("bytearray(b'", "").strip("')")
         count = (
