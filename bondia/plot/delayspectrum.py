@@ -23,7 +23,7 @@ class DelaySpectrumBase(HeatMapPlot):
     """
 
     # default value for colormap range
-    zlim = (0.1, 10000)
+    zlim = (0.001, 1000)
 
     # parameters
     helper_lines = param.Boolean(default=True)
