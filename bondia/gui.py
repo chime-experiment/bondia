@@ -361,7 +361,8 @@ class BondiaGui(param.Parameterized):
             self._opinion_warning.object = f"Opinion added for LSD {lsd.lsd}"
             if self.sort_lsds or self.filter_lsd:
                 self.update_days()
-            self.lsd = self._choose_lsd()
+            # self.lsd = self._choose_lsd()
+            self._update_opinion_warning()
 
     @property
     def current_user(self):
