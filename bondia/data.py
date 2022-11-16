@@ -142,9 +142,12 @@ class DataLoader(Reader):
                         logger.debug(
                             f"Skipping dir '{lsd_dir}'. It doesn't seem to be an lsd dir: {err}"
                         )
+                        continue
                     day = Day.from_lsd(lsd)
+
                     if rev not in self._index:
                         self._index[rev] = {}
+
                     if day.lsd not in self.lsds(rev):
                         if rev not in new_lsds:
                             new_lsds[rev] = []
@@ -158,6 +161,9 @@ class DataLoader(Reader):
                         else:
                             new_lsds[rev].append(new_lsd)
                             self._index[rev][day] = new_lsd
+                    else:
+                        # Update files in lsd
+                        self._index[rev][day]._glob_files()
 
                 if rev in new_lsds and len(new_lsds[rev]) > 0:
                     logger.info(f"Found new {rev} data for day(s) {new_lsds[rev]}.")
@@ -189,7 +195,7 @@ class DataLoader(Reader):
         logger.debug(f"Loading {file_type} file for {revision}, {day}...")
         f = self._index[revision][day].files[file_type]
         if f is None:
-            raise DataError(f"{file_type} for day {day}, {revision} not available.")
+            raise DataError(f"No {file_type} files for day {day}, {revision} found.")
         self._free_oldest_file(file_type)
         setattr(
             self._index[revision][day],
@@ -263,8 +269,11 @@ class DataLoader(Reader):
 class LSD:
     def __init__(self, path: os.PathLike, rev: str, day: Day):
         self._day = day
+        self._rev = rev
         self.files = {}
+        self._glob_files(path)
 
+    def _glob_files(self, path: os.PathLike):
         for file_type, file_type_glob in FILE_TYPES.items():
             file = glob.glob(os.path.join(path, file_type_glob))
             if len(file) != 1:
@@ -276,12 +285,12 @@ class LSD:
             else:
                 file = file[0]
 
-                logger.debug(f"Found {rev} file for lsd {day}: {file}")
+                logger.debug(f"Found {self._rev} file for lsd {self._day}: {file}")
 
                 lsd = int(os.path.splitext(os.path.basename(file))[0][-4:])
-                if lsd != day.lsd:
+                if lsd != self._day.lsd:
                     raise DataError(
-                        f"Found file for LSD {lsd} when expecting LSD {day.lsd}: {file}"
+                        f"Found file for LSD {lsd} when expecting LSD {self._day.lsd}: {file}"
                     )
 
             self.files[file_type] = file
