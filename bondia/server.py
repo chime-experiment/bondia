@@ -6,7 +6,6 @@ import logging
 import panel as pn
 
 from bondia.data import DataLoader
-from bondia.util.exception import ConfigError
 from bondia.gui import BondiaGui
 
 logger = logging.getLogger(__name__)
@@ -63,3 +62,7 @@ class BondiaServer(Reader):
     @property
     def root_url(self):
         return self._root_url
+
+
+class ConfigError(Exception):
+    pass

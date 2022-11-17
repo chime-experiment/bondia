@@ -16,7 +16,6 @@ from ch_util import tools
 from ch_util.ephemeris import csd_to_unix, unix_to_csd, skyfield_wrapper, chime
 
 from bondia.plot.heatmap import RaHeatMapPlot
-from bondia.util.exception import DataError
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +90,7 @@ class RingMapPlot(RaHeatMapPlot, Reader):
             return
         try:
             rm = self.data.load_file(self.revision, self.lsd, "ringmap")
-        except DataError as err:
+        except Exception as err:
             logger.error(f"Unable to get available frequencies from file: {err}")
             # Anyways make sure watchers are triggered
             self.param.trigger("frequency")
@@ -109,7 +108,7 @@ class RingMapPlot(RaHeatMapPlot, Reader):
             return
         try:
             rm = self.data.load_file(self.revision, self.lsd, "ringmap")
-        except DataError as err:
+        except Exception as err:
             logger.error(f"Unable to get available beams from file: {err}")
             # Anyways make sure watchers are triggered
             self.param.trigger("beam")
@@ -126,7 +125,7 @@ class RingMapPlot(RaHeatMapPlot, Reader):
             return
         try:
             rm = self.data.load_file(self.revision, self.lsd, "ringmap")
-        except DataError as err:
+        except Exception as err:
             logger.error(f"Unable to get available polarisations from file: {err}")
             # Anyways make sure watchers are triggered
             self.param.trigger("polarization")
@@ -208,7 +207,7 @@ class RingMapPlot(RaHeatMapPlot, Reader):
             else:
                 name = "ringmap"
             container = self.data.load_file(self.revision, self.lsd, name)
-        except DataError as err:
+        except Exception as err:
             return panel.pane.Markdown(
                 f"Error: {str(err)}. Please report this problem."
             )
@@ -267,7 +266,7 @@ class RingMapPlot(RaHeatMapPlot, Reader):
                 rm_stack = self.data.load_file_from_path(
                     self._stack_path, ccontainers.RingMap
                 )
-            except DataError as err:
+            except Exception as err:
                 return panel.pane.Markdown(
                     f"Error: {str(err)}. Please report this problem."
                 )

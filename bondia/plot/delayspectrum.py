@@ -9,7 +9,6 @@ from holoviews.plotting.util import process_cmap
 from matplotlib import cm as matplotlib_cm
 
 from bondia.plot.heatmap import HeatMapPlot
-from bondia.util.exception import DataError
 
 logger = logging.getLogger(__name__)
 
@@ -60,9 +59,9 @@ class DelaySpectrumBase(HeatMapPlot):
             return panel.pane.Markdown("No data selected.")
         try:
             spectrum = self.data.load_file(self.revision, self.lsd, self._fname)
-        except DataError as err:
+        except Exception as err:
             return panel.pane.Markdown(
-                f"Error: {str(err)}. Please report this problem."
+                f"Error: {str(err)} Please report this problem."
             )
 
         x, y = spectrum.index_map["baseline"].T

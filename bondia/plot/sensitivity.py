@@ -13,8 +13,7 @@ from ch_pipeline.core.containers import RFIMask
 from ch_util.ephemeris import chime, csd, skyfield_wrapper, csd_to_unix, unix_to_csd
 
 from bondia.plot.heatmap import RaHeatMapPlot
-from bondia.util.exception import DataError
-from bondia.util.plotting import hv_image_with_gaps
+from bondia.plot.base import hv_image_with_gaps
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +83,7 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
             return
         try:
             rm = self.data.load_file(self.revision, self.lsd, "sensitivity")
-        except DataError as err:
+        except Exception as err:
             logger.error(f"Unable to get available polarisations from file: {err}")
             return
         objects, value = self.make_selection(rm, "pol")
@@ -113,7 +112,7 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
             return panel.pane.Markdown("No data selected.")
         try:
             sens_container = self.data.load_file(self.revision, self.lsd, "sensitivity")
-        except DataError as err:
+        except Exception as err:
             return panel.pane.Markdown(
                 f"Error: {str(err)}. Please report this problem."
             )
@@ -148,7 +147,7 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
         if self.mask_rfi:
             try:
                 rfi_container = self.data.load_file(self.revision, self.lsd, "rfi")
-            except DataError as err:
+            except Exception as err:
                 return panel.pane.Markdown(
                     f"Error: {str(err)}. Please report this problem."
                 )
