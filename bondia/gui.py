@@ -2,6 +2,7 @@ import logging
 import holoviews as hv
 import panel as pn
 import param
+import asyncio
 
 from chimedb.dataflag.orm import DataFlagOpinion
 
@@ -84,29 +85,27 @@ class BondiaGui(param.Parameterized):
 
         self.param["lsd"].objects = days
 
-        # if self.param["lsd"].objects:
-        #     l = self._choose_lsd()
-        #     if getattr(self, "lsd", -1) == l:
-        #         self.lsd = l
-        #         self.param.trigger("lsd")
-        #     else:
-        #         self.lsd = l
-
     @param.depends("lsd")
     def data_description(self):
         """A title over the plots showing the selected day and rev (and keep it updated)"""
         return pn.pane.Markdown(f"<h4>LSD {self.lsd} - {self.revision}</h4>", width=800)
 
     @param.depends("lsd", watch=True)
-    def update_data_description_day(self):
-
-        # Update opinion warning and buttons when LSD is changed
-        self._update_opinion_warning()
-
-        # Link selected day, revision to plots
+    async def update_plots(self):
+        """Async refresh plots to new revision/lsd. Triggered
+        when switching to a new day."""
+        # Hide all existing plots while we load new data
         for plot in self._plot:
+            plot.panel_row = False
+
+        async def _update_plot(plot):
+            # Link selected day, revision to plots
             plot.lsd = self.lsd
             plot.revision = self.revision
+            plot.panel_row = True
+
+        coros = [_update_plot(p) for p in self._plot]
+        await asyncio.gather(*coros)
 
     def _choose_lsd(self):
         if self.sort_lsds:
@@ -124,6 +123,7 @@ class BondiaGui(param.Parameterized):
 
         return day
 
+    @param.depends("lsd", watch=True)
     def _update_opinion_warning(self):
         self._opinion_warning.alert_type = "primary"
         if self.current_user is None:
@@ -216,6 +216,8 @@ class BondiaGui(param.Parameterized):
         return pn.indicators.LoadingSpinner(value=busy, width=20, height=20)
 
     def populate_template(self, template):
+        # Loading spinner
+        template.add_panel("busy_indicator", pn.Column(self._indicator))
         # Checkbox to show only days w/o opinion
         template.add_panel("day_filter_opinion_checkbox", self.param["filter_lsd"])
         # Checkbox to sort days by number of opinions
@@ -240,13 +242,11 @@ class BondiaGui(param.Parameterized):
             ),
         )
 
-        # Loading spinner
-        template.add_panel("busy_indicator", pn.Column(self._indicator))
-
         # Opinion buttons
         template.add_panel("opinion_header", self._opinion_header)
         template.add_panel("opinion_notes", self._opinion_notes)
         template.add_panel("opinion_warning", self._opinion_warning)
+
         self._opinion_buttons["good"] = pn.widgets.Button(
             name="Mark day as good",
             button_type="success",
@@ -276,9 +276,6 @@ class BondiaGui(param.Parameterized):
             template.add_panel(f"opinion_{decision}", self._opinion_buttons[decision])
 
         template.add_panel("day_stats", self._day_stats)
-
-        # Trigger opinion UI callbacks once now
-        self.param.trigger("lsd")
 
         self._plot = [
             DelaySpectrumPlot(self._data, self._config_plots.get("delayspectrum", {})),
@@ -365,7 +362,6 @@ class BondiaGui(param.Parameterized):
                 self.update_days()
             # else:
             self.lsd = self._choose_lsd()
-            # self._update_opinion_warning()
 
     @property
     def current_user(self):
