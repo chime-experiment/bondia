@@ -84,13 +84,13 @@ class BondiaGui(param.Parameterized):
 
         self.param["lsd"].objects = days
 
-        if self.param["lsd"].objects:
-            l = self._choose_lsd()
-            if getattr(self, "lsd", -1) == l:
-                self.lsd = l
-                self.param.trigger("lsd")
-            else:
-                self.lsd = l
+        # if self.param["lsd"].objects:
+        #     l = self._choose_lsd()
+        #     if getattr(self, "lsd", -1) == l:
+        #         self.lsd = l
+        #         self.param.trigger("lsd")
+        #     else:
+        #         self.lsd = l
 
     @param.depends("lsd")
     def data_description(self):
@@ -359,10 +359,13 @@ class BondiaGui(param.Parameterized):
         else:
             self._opinion_warning.alert_type = "success"
             self._opinion_warning.object = f"Opinion added for LSD {lsd.lsd}"
+            self._update_opinion_warning()
+
             if self.sort_lsds or self.filter_lsd:
                 self.update_days()
-            # self.lsd = self._choose_lsd()
-            self._update_opinion_warning()
+            # else:
+            self.lsd = self._choose_lsd()
+            # self._update_opinion_warning()
 
     @property
     def current_user(self):
