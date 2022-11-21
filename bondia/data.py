@@ -4,11 +4,11 @@ import logging
 import re
 import bisect
 import pathlib
-
+from collections import OrderedDict
 # import signal
 # import sys
 # import threading
-from dataclasses import dataclass
+# from dataclasses import dataclass
 import functools
 from typing import Type, Dict, Union
 
@@ -45,11 +45,6 @@ class DataLoader(Reader):
     interval = Property(proptype=int, default=600)
     max_days_in_memory = Property(proptype=int, default=10)
 
-    # def __init__(self):
-    # #     # self.num_days_in_memory = 0
-    #     self._index_by_path = {}
-    # self._lru = {}
-
     # Set up periodic data file indexing
     # self._periodic_indexer = None
     # self._indexing_done = threading.Event()
@@ -74,10 +69,9 @@ class DataLoader(Reader):
 
     def _finalise_config(self):
         """Index files after caput config reader is done."""
-        # This is a dict-like object
         self.index = DataIndex(self.path, self.interval)
         self._perm_cache = {}
-        self._temp_cache = {}
+        self.cache = LRUCache(self.max_days_in_memory)
         # if self.path:
         #     # Start periodic indexing thread and wait until it ran once.
         #     self._periodic_indexer = threading.Thread(
@@ -88,42 +82,43 @@ class DataLoader(Reader):
         # else:
         #     logger.debug("No data path in config, skipping...")
 
-    @property
-    def cache(self):
-        return self._temp_cache | self._perm_cache
+    # def lsds(self, revision: str):
+    #     return sorted(self.index[revision].keys())
 
-    def lsds(self, revision: str):
-        return sorted(self.index[revision].keys())
+    # def days(self, revision: str):
+    #     # return [day.lsd for day in self.days(revision)]
+    #     return [self.index[revision][lsd].day for lsd in self.lsds(revision)]
 
-    def days(self, revision: str):
-        # return [day.lsd for day in self.days(revision)]
-        return [self.index[revision][lsd].day for lsd in self.lsds(revision)]
+    # @property
+    # def revisions(self):
+    #     return sorted(self.index.keys())
 
-    @property
-    def revisions(self):
-        return sorted(self.index.keys())
+    # @property
+    # def latest_revision(self):
+    #     """
+    #     Get latest revision.
 
-    @property
-    def latest_revision(self):
-        """
-        Get latest revision.
-
-        Note
-        ----
-        This assumes the revisions being numbered like "rev_00", "rev_01", "rev_17", where their
-        order is the same as the revision strings sorted by python string comparison.
-        """
-        return self.revisions[-1]
-
-    def get(self, *args, **kwargs):
-        # TODO: improve this
-        try:
-            self._load_lsd_file(*args, **kwargs)
-        except KeyError:
-            self._load_file_from_path(*args, **kwargs)
+    #     Note
+    #     ----
+    #     This assumes the revisions being numbered like "rev_00", "rev_01", "rev_17", where their
+    #     order is the same as the revision strings sorted by python string comparison.
+    #     """
+    #     return self.revisions[-1]
 
     def _load_lsd_file(self, revision: str, lsd: str, file_type: str):
         """Load the data of one day from disk."""
+        id = revision+lsd
+        lsd_files = self.cache.get(id, {})
+
+        if lsd_files:
+            # There is already an entry for this rev:lsd combo
+            file = lsd_files.get(file_type, None)
+
+            if file is not None:
+                # This file is already cached
+                return file
+
+        # Get the indexed file path for this specific file
         f = self.index[revision][lsd][file_type]
 
         if f is None:
@@ -132,72 +127,59 @@ class DataLoader(Reader):
 
         logger.debug(f"Loading {file_type} file for {revision}, {lsd}...")
 
-        return self._load_file_from_path(f, CONTAINER_TYPES[file_type])
+        # Load the file
+        try:
+            file = self._load_file_from_path(f, CONTAINER_TYPES[file_type])
+        except Exception:
+            return None
+
+        # Add the newly loaded file to the cache and push
+        lsd_files[file_type] = file
+        self.cache.put(id, lsd_files)
+
+        return file
 
     def _load_file_from_path(self, path: pathlib.Path, container, keep: bool = False):
         """Load a file from a path into a container."""
         id = str(path)
 
-        try:
-            return self.cache[id]
-        except KeyError:
+        file = self._perm_cache.get(id, None)
+
+        if file is None:
             logger.debug(f"Loading file from '{path}'...")
-            try:
-                file = container.from_file(path)
-            except Exception as e:  # what exception?
-                raise IOError(f"Failed to load file from '{path}'.") from e
+            file = container.from_file(path)
 
             if keep:
                 self._perm_cache[id] = file
-            else:
-                self._temp_cache[id] = file
 
         return file
 
-    # def _free_oldest_file(self, file_type: str):
-    #     """Remove the file from memory that had been loaded the longest time ago."""
-    #     if file_type not in self._lru:
-    #         self._lru[file_type] = deque()
-    #         return
-    #     if len(self._lru[file_type]) > self.max_days_in_memory - 1:
-    #         i = self._lru_pop(file_type)
-    #         setattr(self._index[i[0]][i[1]], file_type, None)
 
-    # def _lru_pop(self, file_type):
-    #     """
-    #     Get indices of least recently used file.
+class LRUCache:
+    def __init__(self, size: int):
+        self._size = size
+        self._cache = OrderedDict()
 
-    #     Returns
-    #     -------
-    #     Tuple[str, Day]
-    #         revision and day
-    #     """
-    #     i = self._lru[file_type].popleft()
-    #     logger.debug(f"Removing {file_type} for {i[0]}, day {i[1]} from memory")
-    #     return i
+    def get(self, key: str, default = None):
+        try:
+            value = self._cache.pop(key)
+        except KeyError:
+            return default
+        # Put item back at front of queue
+        self._cache[key] = value
 
-    # def _lru_push(self, revision: str, day: Day, file_type: str):
-    #     """
-    #     Signal recent usage of file indices.
+        return value
 
-    #     Parameters
-    #     ----------
-    #     revision : str
-    #         Revision key
-    #     day : Day
-    #         Day
-    #     file_type : str
-    #         File type name
-    #     """
-    #     if file_type not in self._lru:
-    #         self._lru[file_type] = deque()
-    #     indices = (revision, day)
-    #     if indices in self._lru[file_type]:
-    #         self._lru[file_type].remove(indices)
-    #         logger.debug(
-    #             f"Keeping {file_type} for {revision}, day {day} in memory longer."
-    #         )
-    #     self._lru[file_type].append(indices)
+    def put(self, key: str, value):
+        try:
+            # Remove this key if it already exists
+            self._cache.pop(key)
+        except KeyError:
+            # Remove least recently used item if needed
+            if len(self._cache) >= self._size:
+                self._cache.popitem(last=False)
+
+        self._cache[key] = value
 
 
 class DataIndex:
@@ -260,8 +242,6 @@ class DataIndex:
                 new_lsds = existing_lsds ^ self._index[rev].keys()
                 if new_lsds:
                     logger.info(f"Found new {rev} data for day(s) {new_lsds}.")
-                    # Sort the new days into the right positions in the ordered dict
-                    # self._index[rev] = dict(sorted(self._index[rev].items()))
 
 
 class DataIndexDay:
@@ -274,18 +254,16 @@ class DataIndexDay:
         self._rev = rev
         self._path = path
         self._index = dict.fromkeys(FILE_TYPES.keys())
+        self._id = self.__repr__()
+
+    @staticmethod
+    def lsd_from_date(date: datetime.date):
+        unix = time.mktime(date.timetuple())
+
+        return int(unix_to_csd(unix))
 
     def __getitem__(self, key: str):
         return self._index[key]
-
-    def keys(self):
-        return self._index.keys()
-
-    def values(self):
-        return self._index.values()
-
-    def items(self):
-        return self._index.items()
 
     @functools.cache
     def __repr__(self):
@@ -317,30 +295,18 @@ class DataIndexDay:
             self._index[file_type] = file
 
 
-# class Day:
-#     def __init__(self, lsd: int, date: datetime.date):
-#         self.lsd = lsd
-#         self.date = date
-#         self.start_time = csd_to_unix(self.lsd)
-#         self.end_time = csd_to_unix(self.lsd + 1)
+def closest_after(lsd, days):
+    for day in reversed(days):
+        if lsd >= day:
+            return day
+    return closest_before(lsd, days)
 
-#     @functools.cache
-#     def __repr__(self):
-#         return f"{self.lsd} [{self.date.isoformat()} (PT)]"
 
-#     @classmethod
-#     def from_lsd(cls, lsd: int):
-#         date = unix_to_datetime(csd_to_unix(str(lsd)))
-#         lsd = int(lsd)
-
-#         return cls(lsd, date)
-
-#     @classmethod
-#     def from_date(cls, date: datetime.date):
-#         unix = time.mktime(date.timetuple())
-#         lsd = int(unix_to_csd(unix))
-
-#         return cls(lsd, date)
+def closest_before(lsd, days):
+    for day in days:
+        if lsd <= day:
+            return day
+    return closest_after(lsd, days)
 
 #     def closest_after(self, days):
 #         for day in reversed(days):
