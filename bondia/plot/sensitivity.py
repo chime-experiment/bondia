@@ -39,7 +39,7 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
     # parameters
     # Hide lsd, revision selectors by setting precedence < 0
     lsd = param.Selector(precedence=-1)
-    revision = param.Selector(precedence=-1)
+    revision = ""  # param.Selector(precedence=-1)
 
     polarization = param.ObjectSelector()
     mark_day_time = param.Boolean(default=True)
@@ -78,7 +78,8 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
                     self.param.trigger("colormap_range")
                 self.colormap_range = self.zlim_estimate
 
-    @param.depends("lsd", "revision", watch=True)
+    # @param.depends("lsd", "revision", watch=True)
+    @param.depends("lsd", watch=True)
     def update_pol(self):
         if self.lsd is None:
             return
@@ -91,12 +92,15 @@ class SensitivityPlot(RaHeatMapPlot, Reader):
         if "XX" in objects and "YY" in objects:
             objects.append(self.mean_pol_text)
             value = self.mean_pol_text
-        self.param["polarization"].objects = objects
-        self.polarization = value
-        self.param.trigger("polarization")
+
+        if value != self.polarization:
+            self.param["polarization"].objects = objects
+            self.polarization = value
+        else:
+            self.param.trigger("polarization")
 
     @param.depends(
-        "lsd",
+        # "lsd",
         "transpose",
         "logarithmic_colorscale",
         "serverside_rendering",
