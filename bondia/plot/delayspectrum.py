@@ -30,7 +30,7 @@ class DelaySpectrumBase(HeatMapPlot):
 
     # Hide lsd, revision selectors by setting precedence < 0
     lsd = param.Selector(precedence=-1)
-    revision = param.Selector(precedence=-1)
+    revision = ""  # param.Selector(precedence=-1)
 
     def __init__(self, data, config, **params):
         self.data = data
@@ -46,7 +46,7 @@ class DelaySpectrumBase(HeatMapPlot):
         self._fname = ""
 
     @param.depends(
-        "revision",
+        # "revision",
         "lsd",
         "transpose",
         "logarithmic_colorscale",

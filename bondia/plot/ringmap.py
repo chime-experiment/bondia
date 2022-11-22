@@ -44,7 +44,7 @@ class RingMapPlot(RaHeatMapPlot, Reader):
     # Parameters
     # Hide lsd, revision selectors by setting precedence < 0
     lsd = param.Selector(precedence=-1)
-    revision = param.Selector(precedence=-1)
+    revision = ""  # param.Selector(precedence=-1)
     beam = param.ObjectSelector()
     polarization = param.ObjectSelector()
     frequency = param.ObjectSelector()
@@ -83,7 +83,8 @@ class RingMapPlot(RaHeatMapPlot, Reader):
         elif not os.path.isfile(self._stack_path):
             raise IOError(f"Ringmap stack file not found in path {self._stack_path}.")
 
-    @param.depends("lsd", "revision", watch=True)
+    # @param.depends("lsd", "revision", watch=True)
+    @param.depends("lsd", watch=True)
     def update_freqs(self):
         if self.lsd is None:
             # Anyways make sure watchers are triggered
@@ -96,10 +97,15 @@ class RingMapPlot(RaHeatMapPlot, Reader):
             # Anyways make sure watchers are triggered
             self.param.trigger("frequency")
             return
-        self.param["frequency"].objects = [f[0] for f in rm.index_map["freq"]]
-        self.frequency = rm.index_map["freq"][0][0]
-        # Trigger watchers also if value didn't change
-        self.param.trigger("frequency")
+
+        freq = rm.index_map["freq"][0][0]
+
+        if freq != self.frequency:
+            self.param["frequency"].objects = [f[0] for f in rm.index_map["freq"]]
+            self.frequency = freq  # rm.index_map["freq"][0][0]
+        else:
+            # Trigger watchers also if value didn't change
+            self.param.trigger("frequency")
 
     @param.depends("frequency", watch=True)
     def update_beam(self):
@@ -114,9 +120,14 @@ class RingMapPlot(RaHeatMapPlot, Reader):
             # Anyways make sure watchers are triggered
             self.param.trigger("beam")
             return
-        self.param["beam"].objects, self.beam = self.make_selection(rm, "beam")
-        # Trigger watchers also if value didn't change
-        self.param.trigger("beam")
+
+        obj, beam = self.make_selection(rm, "beam")
+
+        if beam != self.beam:
+            self.param["beam"].objects, self.beam = obj, beam
+        else:
+            # Trigger watchers also if value didn't change
+            self.param.trigger("beam")
 
     @param.depends("beam", watch=True)
     def update_pol(self):
@@ -135,10 +146,13 @@ class RingMapPlot(RaHeatMapPlot, Reader):
         if "XX" in objects and "YY" in objects:
             objects.append(self.mean_pol_text)
             value = self.mean_pol_text
-        self.param["polarization"].objects = objects
-        self.polarization = value
-        # Trigger watchers also if value didn't change
-        self.param.trigger("polarization")
+
+        if value != self.polarization:
+            self.param["polarization"].objects = objects
+            self.polarization = value
+        else:
+            # Trigger watchers also if value didn't change
+            self.param.trigger("polarization")
 
     @param.depends("weight_mask", watch=True)
     def update_weight_threshold_selection(self):
